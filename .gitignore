@@ -1,0 +1,110 @@
+# 환경 변수 파일
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+example.env
+*.env
+
+# Python 가상환경 및 패키지
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Node.js 의존성 및 빌드 파일
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Next.js 빌드 파일
+.next/
+out/
+build/
+dist/
+
+# TypeScript 빌드 파일
+*.tsbuildinfo
+
+# 로그 파일
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# 런타임 데이터
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# 커버리지 디렉토리
+coverage/
+*.lcov
+.nyc_output
+
+# IDE 및 에디터 파일
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS 생성 파일
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 임시 파일
+*.tmp
+*.temp
+.cache/
+
+# 데이터베이스 파일
+*.db
+*.sqlite
+*.sqlite3
+
+# ML 모델 파일 (큰 파일들)
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+ml_models/
+models/
+
+# 백업 파일
+*.bak
+*.backup
