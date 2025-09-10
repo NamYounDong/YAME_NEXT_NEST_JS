@@ -8,23 +8,122 @@ AI 기반 증상 분석을 통한 스마트 의료 서비스 플랫폼입니다.
 
 ```
 YAME/
-├── backend/                    # NestJS 백엔드 API
+├── backend/                           # NestJS 백엔드 API
 │   ├── src/
-│   │   ├── symptom-logs/      # 증상 로그 및 분석 모듈
-│   │   ├── auth/              # 인증 및 보안
-│   │   ├── database/          # 데이터베이스 연결
-│   │   └── redis/             # Redis 캐시
-│   ├── config/                # 환경 설정
-│   └── database_*.sql         # 데이터베이스 스키마
-├── frontend/                  # Next.js 프론트엔드
+│   │   ├── config/                    # 모듈 설정
+│   │   │   ├── assessments.module.ts  # 평가 모듈 설정
+│   │   │   ├── data-collector.module.ts # 데이터 수집 모듈
+│   │   │   ├── data-ml.module.ts      # ML 모듈 설정
+│   │   │   ├── database.module.ts     # 데이터베이스 설정
+│   │   │   ├── redis.module.ts        # Redis 설정
+│   │   │   ├── session.module.ts      # 세션 관리 설정
+│   │   │   ├── symptom-logs.module.ts # 증상 로그 모듈
+│   │   │   └── users.module.ts        # 사용자 모듈
+│   │   ├── controllers/               # API 컨트롤러
+│   │   │   ├── app.controller.ts      # 메인 앱 컨트롤러
+│   │   │   ├── assessments.controller.ts # 평가 컨트롤러
+│   │   │   ├── data-collector.controller.ts # 데이터 수집 컨트롤러
+│   │   │   ├── data-ml.controller.ts  # ML 컨트롤러
+│   │   │   └── users.controller.ts    # 사용자 컨트롤러
+│   │   ├── database/                  # 데이터베이스 매퍼
+│   │   │   ├── base.mapper.ts         # 기본 매퍼
+│   │   │   ├── data-crawler.mapper.ts # 데이터 크롤러 매퍼
+│   │   │   ├── dur-ingredient.mapper.ts # DUR 성분 매퍼
+│   │   │   ├── dur-item.mapper.ts     # DUR 품목 매퍼
+│   │   │   ├── emergency.mapper.ts    # 응급실 매퍼
+│   │   │   ├── hospital.mapper.ts     # 병원 매퍼
+│   │   │   ├── pharmacy.mapper.ts     # 약국 매퍼
+│   │   │   └── trauma.mapper.ts       # 외상 매퍼
+│   │   ├── decorators/                # 커스텀 데코레이터
+│   │   │   └── session-user.decorator.ts # 세션 사용자 데코레이터
+│   │   ├── guards/                    # 인증 가드
+│   │   │   ├── external-auth.guard.ts # 외부 인증 가드
+│   │   │   └── session-auth.guard.ts  # 세션 인증 가드
+│   │   ├── Interfaces/                # DTO 및 인터페이스
+│   │   │   ├── create-assessment.dto.ts
+│   │   │   ├── create-user.dto.ts
+│   │   │   ├── data-collection.interface.ts
+│   │   │   ├── response-base.dto.ts
+│   │   │   ├── update-assessment.dto.ts
+│   │   │   └── update-user.dto.ts
+│   │   ├── ml_src/                    # Python ML 소스
+│   │   │   ├── config/                # ML 설정
+│   │   │   └── svrc/                  # ML 서비스
+│   │   │       └── disease/           # 질병 분석 모듈
+│   │   ├── models/                    # 데이터 모델
+│   │   │   ├── assessment.entity.ts   # 평가 엔티티
+│   │   │   └── user.entity.ts         # 사용자 엔티티
+│   │   ├── scheduler/                 # 스케줄러
+│   │   │   ├── dur-collection.scheduler.ts # DUR 수집 스케줄러
+│   │   │   ├── emergency-collection.scheduler.ts # 응급실 수집
+│   │   │   ├── full-collection.scheduler.ts # 전체 수집
+│   │   │   ├── hira-collection.scheduler.ts # HIRA 수집
+│   │   │   └── scheduler.module.ts    # 스케줄러 모듈
+│   │   ├── services/                  # 비즈니스 로직
+│   │   │   ├── app.service.ts         # 메인 서비스
+│   │   │   ├── assessments.service.ts # 평가 서비스
+│   │   │   ├── data-collector.service.ts # 데이터 수집 서비스
+│   │   │   ├── data-ml.service.ts     # ML 서비스
+│   │   │   ├── database.service.ts    # 데이터베이스 서비스
+│   │   │   ├── disease-crawler.service.ts # 질병 크롤러
+│   │   │   ├── dur-ingredient.service.ts # DUR 성분 서비스
+│   │   │   ├── dur-item.service.ts    # DUR 품목 서비스
+│   │   │   ├── emergency-base.service.ts # 응급실 서비스
+│   │   │   ├── hira-hospital.service.ts # HIRA 병원 서비스
+│   │   │   ├── hira-pharmacy.service.ts # HIRA 약국 서비스
+│   │   │   ├── redis.service.ts       # Redis 서비스
+│   │   │   ├── session.service.ts     # 세션 서비스
+│   │   │   ├── trauma-base.service.ts # 외상 서비스
+│   │   │   └── users.service.ts       # 사용자 서비스
+│   │   ├── utils/                     # 유틸리티
+│   │   │   ├── api-collector.util.ts  # API 수집 유틸
+│   │   │   ├── case-converter.util.ts # 케이스 변환 유틸
+│   │   │   └── python-script.util.ts  # Python 스크립트 유틸
+│   │   ├── app.module.ts              # 메인 앱 모듈
+│   │   └── main.ts                    # 앱 진입점
+│   ├── config/                        # 환경 설정
+│   ├── database/                      # 데이터베이스 파일
+│   ├── dist/                          # 빌드 결과물
+│   ├── logs/                          # 로그 파일
+│   ├── ml_models/                     # ML 모델 파일
+│   ├── venv/                          # Python 가상환경
+│   ├── package.json                   # Node.js 의존성
+│   └── yame_create_tables.sql         # DB 스키마
+├── frontend/                          # Next.js 프론트엔드
 │   ├── src/
-│   │   ├── components/
-│   │   │   ├── symptom/       # 증상 관련 컴포넌트
-│   │   │   └── map/           # VWorld 지도 컴포넌트
-│   │   ├── services/          # API 서비스
-│   │   └── types/             # TypeScript 타입 정의
-│   └── public/
-└── README.md
+│   │   ├── app/                       # App Router 페이지
+│   │   │   ├── admin/                 # 관리자 페이지
+│   │   │   │   └── scheduler/         # 스케줄러 관리
+│   │   │   ├── symptom-analysis/      # 증상 분석 페이지
+│   │   │   ├── globals.css            # 전역 스타일
+│   │   │   ├── layout.tsx             # 레이아웃
+│   │   │   └── page.tsx               # 메인 페이지
+│   │   ├── components/                # React 컴포넌트
+│   │   │   ├── admin/                 # 관리자 컴포넌트
+│   │   │   │   └── DataCollectionPanel.tsx
+│   │   │   ├── loading/               # 로딩 컴포넌트
+│   │   │   │   ├── HeartLoader.tsx
+│   │   │   │   └── LoadingOverlay.tsx
+│   │   │   ├── map/                   # 지도 컴포넌트
+│   │   │   │   └── VWorldMap.tsx
+│   │   │   ├── providers/             # 컨텍스트 프로바이더
+│   │   │   │   └── LoadingProvider.tsx
+│   │   │   ├── symptom/               # 증상 관련 컴포넌트
+│   │   │   │   ├── AnalysisResult.tsx
+│   │   │   │   └── SymptomInputForm.tsx
+│   │   │   ├── providers.tsx          # 프로바이더 설정
+│   │   │   └── YameLogo.tsx           # 로고 컴포넌트
+│   │   ├── services/                  # API 서비스
+│   │   │   └── symptom.ts             # 증상 서비스
+│   │   ├── types/                     # TypeScript 타입
+│   │   │   └── symptom.ts             # 증상 타입
+│   │   └── utils/                     # 유틸리티
+│   │       └── api.ts                 # API 유틸
+│   ├── public/                        # 정적 파일
+│   ├── package.json                   # Node.js 의존성
+│   └── next.config.js                 # Next.js 설정
+├── .gitignore                         # Git 무시 파일
+└── README.md                          # 프로젝트 문서
 ```
 
 ## 🛠 기술 스택
