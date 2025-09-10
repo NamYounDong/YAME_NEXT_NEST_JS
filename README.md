@@ -57,12 +57,6 @@ YAME/
 - ✅ **GPS 기반 위치 서비스**: 주변 의료기관 검색 및 거리 계산
 - ✅ **실시간 피드백**: 추천 결과에 대한 만족도 수집
 
-### 🏥 의료기관 연동
-- ✅ **병원 접수 토큰**: UUID 기반 일회용 토큰으로 병원 포털 연계
-- ✅ **HIRA API 연동 준비**: 병원정보서비스 API 구조 구현
-- ✅ **응급실 정보**: 실시간 응급실 가용성 체크 준비
-- ✅ **VWorld 지도**: 국토교통부 지도 API 기반 위치 표시
-
 ### 🔒 보안 및 인증
 - ✅ **외부 인증 연동**: Spring Security 기반 별도 인증 서비스 연동
 - ✅ **세션 관리**: Redis 기반 세션 공유 (다중 프로젝트 호환)
@@ -100,7 +94,7 @@ async getUserFromSession(sessionId: string) {
 }
 ```
 
-## 빠른 시작
+
 
 ### 사전 요구사항
 - Node.js 18+
@@ -108,31 +102,8 @@ async getUserFromSession(sessionId: string) {
 - Redis 6.0+
 - npm
 
-### 설치 및 실행
 
-1. **저장소 클론**
-   ```bash
-   git clone <repository-url>
-   cd YAME
-   ```
-
-2. **백엔드 설정**
-   ```bash
-   cd backend
-   npm install
-   
-   # 환경변수 설정
-   cp config/env.example .env
-   # .env 파일에서 MariaDB, Redis 연결 정보 수정
-   
-   # 데이터베이스 스키마 생성
-   mysql -u root -p < database/schema.sql
-   
-   # 개발 서버 시작
-   npm run start:dev
-   ```
-
-3. **프론트엔드 설정**
+1. **프론트엔드 설정**
    ```bash
    cd frontend
    npm install
@@ -141,80 +112,18 @@ async getUserFromSession(sessionId: string) {
    npm run dev
    ```
 
-4. **접속**
+2. **접속**
    - Frontend: http://localhost:3000
    - Backend API: http://localhost:3001
    - API Documentation: http://localhost:3001/api
 
 ## 환경 변수
 
-### Backend (.env)
-```env
-# 마리아DB 연결 정보
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=root
-DB_PASSWORD=your_mariadb_password
-DB_DATABASE=yame
-
-# Redis 연결 정보
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
-
-# 세션 설정
-SESSION_PREFIX=spring:session:sessions:
-
-# JWT (호환성을 위해 유지)
-JWT_SECRET=your-super-secret-jwt-key
-
-# 환경 설정
-NODE_ENV=development
-PORT=3001
-```
-
 ### Frontend (.env.local)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
-## API 엔드포인트
-
-### 인증 관련
-- `POST /auth/login` - 로그인 (JWT 방식)
-- `POST /auth/register` - 회원가입
-
-### 사용자 관리 (세션 인증 필요)
-- `GET /users` - 사용자 목록
-- `GET /users/me` - 현재 사용자 정보
-- `GET /users/:id` - 사용자 상세
-- `PATCH /users/:id` - 사용자 수정
-- `DELETE /users/:id` - 사용자 삭제
-
-### 건강 평가 (세션 인증 필요)
-- `GET /assessments` - 평가 목록
-- `POST /assessments` - 새 평가 생성
-- `GET /assessments/:id` - 평가 상세
-- `PATCH /assessments/:id` - 평가 수정
-- `DELETE /assessments/:id` - 평가 삭제
-
-### 기타
-- `GET /` - API 정보
-- `GET /health` - 헬스 체크
-
-자세한 API 문서: http://localhost:3001/api
-
-## 데이터베이스 스키마
-
-### Users 테이블
-- 사용자 정보 (환자, 의사, 관리자)
-- 역할 기반 접근 제어
-
-### Assessments 테이블
-- 건강 평가 및 설문 데이터
-- JSON 형태의 설문/응답 저장
-- 환자-의사 관계 연결
 
 ## 🚀 빠른 시작 가이드
 
@@ -225,138 +134,6 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 - **npm** 또는 **yarn**
 
 ### 1. 프로젝트 클론 및 설치
-
-```bash
-# 프로젝트 클론
-git clone https://github.com/your-org/yame.git
-cd yame
-
-# 백엔드 패키지 설치
-cd backend
-npm install
-
-# 프론트엔드 패키지 설치  
-cd ../frontend
-npm install --legacy-peer-deps
-```
-
-### 2. 환경 설정
-
-#### 백엔드 환경 변수 (.env)
-```bash
-cd backend
-cp config/env.example .env
-```
-
-⚠️ **중요**: 모든 하드코딩된 데이터가 제거되었습니다. 시스템 운영을 위해서는 **반드시 외부 API 키들을 설정**해야 합니다.
-
-`.env` 파일 수정:
-```env
-# 마리아DB 연결 정보
-DB_HOST=localhost
-DB_PORT=3306
-DB_USERNAME=root
-DB_PASSWORD=your_mariadb_password
-DB_DATABASE=yame
-
-# Redis 연결 정보
-REDIS_HOST=localhost
-REDIS_PORT=6379
-REDIS_PASSWORD=
-REDIS_DB=0
-
-# 🔑 필수 외부 API 키들 (운영을 위해 반드시 설정 필요)
-VWORLD_API_KEY=your_vworld_api_key          # 지도 서비스
-HIRA_API_KEY=your_hira_api_key              # 병원 정보 수집
-MFDS_DUR_API_KEY=your_mfds_dur_api_key      # 의약품 안전성 체크
-PHARMACY_API_KEY=your_pharmacy_api_key       # 약국 정보 수집
-EGEN_API_KEY=your_egen_api_key              # 응급실 현황
-
-# 🤖 ML 서비스 설정 (반드시 활성화 필요)
-ML_SERVICE_ENABLED=true
-ML_SERVICE_URL=http://localhost:5000
-
-# 🔐 외부 인증 서비스 설정 (반드시 활성화 필요)
-AUTH_SERVICE_ENABLED=true
-AUTH_SERVICE_URL=http://localhost:8080
-```
-
-**⚠️ API 키 없이는 다음 기능들이 작동하지 않습니다:**
-- 증상 분석 (ML 서비스 필요)
-- 병원/약국 검색 (데이터 수집 API 필요)
-- 의약품 안전성 체크 (DUR API 필요)
-- 사용자 인증 (외부 인증 서비스 필요)
-
-#### 프론트엔드 환경 변수
-```bash
-cd frontend
-echo "NEXT_PUBLIC_API_URL=http://localhost:3001" > .env.local
-echo "NEXT_PUBLIC_VWORLD_API_KEY=your_vworld_api_key" >> .env.local
-```
-
-### 3. 데이터베이스 설정
-
-```sql
--- MariaDB에서 실행
-CREATE DATABASE yame;
-USE yame;
-
--- 테이블 생성
-SOURCE backend/database_tables.sql;
-
--- 초기 데이터 (선택사항)
-SOURCE backend/database_mng_datas.sql;
-```
-
-### 4. 서비스 실행
-
-#### 개발 환경
-```bash
-# 터미널 1: 백엔드 실행
-cd backend
-npm run start:dev
-
-# 터미널 2: 프론트엔드 실행  
-cd frontend
-npm run dev
-```
-
-#### 운영 환경
-```bash
-# 백엔드 빌드 및 실행
-cd backend
-npm run build
-npm run start:prod
-
-# 프론트엔드 빌드 및 실행
-cd frontend
-npm run build
-npm run start
-```
-
-### 5. 접속 확인
-
-- **프론트엔드**: http://localhost:3000
-- **백엔드 API**: http://localhost:3001
-- **Swagger 문서**: http://localhost:3001/api
-
-## 🔧 개발 가이드
-
-### 새로운 증상 분석 API 추가
-1. `src/symptom-logs/services/`에 새 서비스 생성
-2. `symptom-logs.service.ts`에서 워크플로우 통합
-3. Controller에 엔드포인트 추가
-
-### 외부 API 연동
-```typescript
-// ML 예측 서비스 예시
-async predictDisease(symptomText: string): Promise<MLResult> {
-  if (this.mlServiceEnabled) {
-    return await this.callExternalMLService(symptomText);
-  }
-  return this.mockPrediction(symptomText);
-}
-```
 
 ### 지도 커스터마이징
 ```typescript
@@ -473,7 +250,6 @@ Redis (캐시/세션)
 - [ ] **성능 최적화 및 로드 밸런싱**
 
 ### Phase 3 (중기)
-- [ ] 의료진 포털 개발
 - [ ] 실시간 응급실 현황 연동
 - [ ] 다국어 지원 (영어, 중국어)
 - [ ] 모바일 앱 개발 (React Native)
@@ -481,9 +257,6 @@ Redis (캐시/세션)
 
 ### Phase 4 (장기)
 - [ ] AI 모델 자체 학습 및 개선
-- [ ] 블록체인 기반 의료 기록 관리
-- [ ] IoT 기기 연동 (웨어러블, 센서)
-- [ ] 텔레메디슨 화상 상담 연동
 
 ## 📊 데이터 수집 시스템
 
@@ -522,91 +295,3 @@ YAME 시스템은 외부 공공 API를 통해 의료기관 정보와 의약품 �
 - **자동 품질 검증**: 중복, 누락, 무효 데이터 감지
 - **품질 점수 산출**: 0-100점 자동 계산
 - **통계 대시보드**: 수집 현황 및 품질 모니터링
-
-#### 🔧 관리 API 엔드포인트
-
-**데이터 수집 관리**
-- `POST /data-collector/hospitals/collect` - 병원 데이터 수동 수집
-- `POST /data-collector/pharmacies/collect` - 약국 데이터 수동 수집
-- `POST /data-collector/dur/collect` - DUR 데이터 수동 수집
-- `POST /data-collector/all/collect` - 전체 데이터 수집
-
-**통계 및 모니터링**
-- `GET /data-collector/stats` - 수집 통계 조회
-- `GET /data-collector/dashboard` - 집계 대시보드
-- `GET /data-collector/realtime/status` - 실시간 서비스 상태
-- `GET /data-collector/scheduler/status` - 스케줄러 상태
-
-**데이터 집계**
-- `POST /data-collector/aggregation/run` - 일별 데이터 집계 실행
-- `GET /data-collector/dur/stats` - DUR 데이터 통계
-
-#### 🗄️ 데이터베이스 구조
-
-**수집 관리 테이블**
-- `data_collection_logs` - 수집 작업 실행 로그
-- `data_collection_stats` - 일별 수집 통계
-- `realtime_collection_status` - 실시간 서비스 상태
-- `data_quality_metrics` - 데이터 품질 메트릭
-
-**통계 집계 테이블**
-- `agg_symptom_daily` - 일별 증상 통계
-- `agg_region_daily` - 지역별 통계
-- `agg_dur_daily` - DUR 위반 비율
-- `agg_feedback_daily` - 피드백 통계
-
-**DUR 데이터 테이블**
-- `dur_raw_substance` / `dur_raw_product` - 원본 데이터
-- `dim_dur_substance` / `dim_dur_product` - 차원 테이블
-- `dur_rule_fact` - DUR 규칙 사실 테이블
-
-#### 🚀 사용법
-
-1. **환경 설정**
-   ```bash
-   # .env 파일에 API 키 설정
-   MFDS_DUR_API_KEY=your_mfds_api_key
-   HIRA_API_KEY=your_hira_api_key
-   EGEN_API_KEY=your_egen_api_key
-   ```
-
-2. **데이터베이스 스키마 업데이트**
-   ```sql
-   SOURCE backend/database_tables.sql;
-   ```
-
-3. **자동 스케줄링 활성화**
-   - 운영 환경에서 자동으로 스케줄링 시작
-   - 개발 환경에서는 수동 API 호출로 테스트
-
-4. **모니터링**
-   ```bash
-   # 수집 현황 확인
-   curl http://localhost:3001/data-collector/stats
-   
-   # 대시보드 데이터 조회
-   curl http://localhost:3001/data-collector/dashboard
-   ```
-
-#### 📊 성능 최적화
-
-- **공간 인덱스**: GPS 좌표 기반 고성능 검색
-- **배치 처리**: 대량 데이터 수집 시 배치 단위 처리
-- **캐싱**: Redis를 통한 자주 조회되는 데이터 캐싱
-- **연결 풀링**: 데이터베이스 연결 풀 관리
-
-#### 🔍 데이터 품질 지표
-
-- **완성도**: 필수 필드 누락 비율
-- **정확도**: 좌표, 전화번호 유효성
-- **최신성**: 데이터 업데이트 주기
-- **일관성**: 중복 데이터 비율
-
----
-
-## 📞 문의사항
-
-프로젝트 관련 문의사항이나 버그 리포트는 Issues를 통해 남겨주세요.
-
-**개발팀 연락처**: dev@yame.kr  
-**서비스 문의**: support@yame.kr
