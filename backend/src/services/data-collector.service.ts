@@ -320,11 +320,26 @@ export class DataCollectorService {
 
 
 
+  // Wikipedia 카테고리 시딩 잡 생성
+  async createWikiCategorySeed(category: string, depthLimit = 2, includeSubcats = true, rps = 0.5) {
+    return this.diseaseCrawlerService.createWikiCategorySeed(category, depthLimit, includeSubcats, rps);
+  }
+  
+  // AMC 인덱스 시딩 잡 생성 — 최소 입력: ROOT_URL만 주면 동작
+  async createAmcIndexSeed(
+    seed: { rootUrl: string; paginationMode: 'QUERY_PARAM'|'LINK_NEXT'|'CSS_SELECTOR'; queryParamName: string; startPage: number; cssNextSelector: string; rps: number }) {
+    return this.diseaseCrawlerService.createAmcIndexSeed(seed);
+  }
 
-
-
-
-
+  // 시딩 워커 실행(공용) — timeBudget/maxApiCalls 소진 시 PAUSED로 저장 후 종료
+  async runSeeder(type: 'WIKI'|'AMC', seedId: number, timeBudgetSec = 3600, maxApiCalls = 5000) {
+    return this.diseaseCrawlerService.runSeeder(type, seedId, timeBudgetSec, maxApiCalls);
+  }
+  
+  // 상태 조회(공용)
+  async seedStatus(type: 'WIKI'|'AMC', seedId: number) {
+    return this.diseaseCrawlerService.seedStatus(type, seedId);
+  }
 
 
   

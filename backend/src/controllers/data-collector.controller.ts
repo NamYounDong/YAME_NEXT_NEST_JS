@@ -52,7 +52,7 @@
  */
 
 // NestJS 핵심 모듈 및 데코레이터 임포트
-import { Controller, Get, Post, Query, Logger, Req } from '@nestjs/common';
+import { Controller, Get, Post, Query, Logger, Req, Body } from '@nestjs/common';
 // 데이터 수집 서비스 및 관련 인터페이스 임포트
 import { DataCollectorService, CollectionSummary } from '../services/data-collector.service';
 import { CollectionResult } from '../interfaces/data-collection.interface';
@@ -634,7 +634,39 @@ export class DataCollectorController {
   }
 
 
+  // Wikipedia 카테고리 시딩 잡 생성
+  @Post('wiki-category')
+    createWikiSeed(@Body() b: { category: string; depthLimit?: number; includeSubcats?: boolean; rps?: number }) {
+    return this.dataCollectorService.createWikiCategorySeed(b.category, b.depthLimit ?? 2, b.includeSubcats ?? true, b.rps ?? 0.5);
+  }
 
+
+  // AMC 인덱스 시딩 잡 생성 — 최소 입력: ROOT_URL만 주면 동작
+  @Post('amc-index')
+  createAmcSeed(@Body() b: { rootUrl: string; paginationMode?: 'QUERY_PARAM'|'LINK_NEXT'|'CSS_SELECTOR'; queryParamName?: string; startPage?: number; cssNextSelector?: string; rps?: number }) {
+    return this.dataCollectorService.createAmcIndexSeed({
+      rootUrl: b.rootUrl,
+      paginationMode: b.paginationMode ?? 'QUERY_PARAM',
+      queryParamName: b.queryParamName ?? 'pageIndex',
+      startPage: b.startPage ?? 1,
+      cssNextSelector: b.cssNextSelector ?? 'a.next, a[rel="next"], a:contains("다음"), a:contains("Next")',
+      rps: b.rps ?? 0.3,
+    });
+  }
+
+
+  // 시딩 워커 실행(공용) — timeBudget/maxApiCalls 소진 시 PAUSED로 저장 후 종료
+  @Post('seed/run')
+  runSeeder(@Body() b: { type: 'WIKI'|'AMC'; seedId: number; timeBudgetSec?: number; maxApiCalls?: number }) {
+    return this.dataCollectorService.runSeeder(b.type, b.seedId, b.timeBudgetSec ?? 3600, b.maxApiCalls ?? 5000);
+  }
+
+
+  // 상태 조회(공용)
+  @Get('seed/status')
+  seedStatus(@Query('type') type: 'WIKI'|'AMC', @Query('seedId') seedId: number) {
+    return this.dataCollectorService.seedStatus(type, Number(seedId));
+  }
 
 
 

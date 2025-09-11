@@ -252,7 +252,7 @@ export class DiseaseCrawlerService {
 
     // 요약이 없으면 대략 성공만 반환
     return {
-      ok: true,
+      success: true,
       dumpPath: opts.dumpPath || this.defaultDump,
       args,
       summary: summary ?? { note: '스크립트가 요약 JSON을 출력하지 않았습니다.' },
@@ -282,7 +282,7 @@ export class DiseaseCrawlerService {
   // Python 워커 실행 — once/loop 모드
   async runWorker(mode: 'once'|'loop'='once', maxItems = 10, source?: 'AMC'|'WIKIPEDIA'|'ANY') {
     const py = process.env.PYTHON_BIN || 'python3';
-    const worker = process.env.PY_WORKER_PATH || '../ml_src/srvc/disease/crawler_worker.py';
+    const worker = process.env.PY_WORKER_PATH || './src/ml_src/svrc/disease/crawler_worker.py';
   
   
     // 인자 구성
@@ -329,6 +329,90 @@ export class DiseaseCrawlerService {
       });
     });
   }
+
+
+  async createWikiCategorySeed(category: string, depthLimit: number, includeSubcats: boolean, rps: number) {
+    const row = await this.dataCrawlerMapper.createWikiCategorySeed(category, depthLimit, includeSubcats, rps);
+    // 마리아 DB 드라이버가 insert 문 전달 시 auto_increment 컬럼이 있으면 다음과 같은 형태로 반환 해줌 
+    // row { affectedRows: 1, insertId: 7n, warningStatus: 0 }
+    const seedId = Number(row.insertId); 
+    
+    await this.dataCrawlerMapper.createWikiCategoryTodo(seedId, category);
+    return { success: true, seedId };
+  }
+
+  async createAmcIndexSeed(b: { rootUrl: string; paginationMode: string; queryParamName: string; startPage: number; cssNextSelector: string; rps: number }) {
+    const row = await this.dataCrawlerMapper.createAmcIndexSeed(b);
+    // 마리아 DB 드라이버가 insert 문 전달 시 auto_increment 컬럼이 있으면 다음과 같은 형태로 반환 해줌 
+    // row { affectedRows: 1, insertId: 7n, warningStatus: 0 }
+    const seedId = Number(row.insertId); 
+
+    // // 최초 TODO — CURRENT_URL=ROOT_URL, PAGE_NO=START_PAGE
+    await this.dataCrawlerMapper.createAmcIndexTodo(seedId, b.rootUrl, b.startPage);
+    return { success: true, seedId };
+  }
+
+  async seedStatus(type: 'WIKI'|'AMC', seedId: number) {
+    if (type === 'WIKI') {
+      const seed = await this.dataCrawlerMapper.getWikiCategorySeed(seedId);
+      const todos = await this.dataCrawlerMapper.getWikiCategoryTodo(seedId);
+      return { seed, todos };
+    } else {
+      const seed = await this.dataCrawlerMapper.getAmcIndexSeed(seedId);
+      const todos = await this.dataCrawlerMapper.getAmcIndexTodo(seedId);
+      return { seed, todos };
+    }
+  }
+
+  runSeeder(type: 'WIKI'|'AMC', seedId: number, timeBudgetSec: number, maxApiCalls: number) {
+    const py = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    const worker = process.env.PY_WORKER_PATH || './src/ml_src/svrc/disease/crawler_worker.py';
+    const args = [worker, `--mode=discovery`, `--seed-type=${type}`, `--seed-id=${seedId}`, `--time-budget=${timeBudgetSec}`, `--max-api-calls=${maxApiCalls}`];
+
+    this.logger.log(`Spawn seeder: ${py} ${args.join(' ')}`);
+
+    return new Promise((resolve) => {
+      const proc = spawn(py, args, { 
+        stdio: ['ignore', 'pipe', 'pipe'],
+        cwd: process.cwd(),
+        shell: process.platform === 'win32'
+      });
+      let summary: any = null;
+      let stdout = '';
+      let stderr = '';
+      
+      proc.stdout.on('data', (buf) => {
+        const text = buf.toString('utf8');
+        stdout += text;
+        try { 
+          summary = JSON.parse(text); 
+        } catch { 
+          this.logger.log(`[seeder] ${text.trim()}`); 
+        }
+      });
+      
+      proc.stderr.on('data', (buf) => {
+        const text = buf.toString('utf8');
+        stderr += text;
+        this.logger.warn(`[seeder:err] ${text.trim()}`);
+      });
+      
+      proc.on('close', (code) => {
+        this.logger.log(`[seeder] Process exited with code: ${code}`);
+        if (code !== 0) {
+          this.logger.error(`[seeder] STDOUT: ${stdout}`);
+          this.logger.error(`[seeder] STDERR: ${stderr}`);
+        }
+        resolve({ success: code === 0, summary, stdout, stderr });
+      });
+      
+      proc.on('error', (error) => {
+        this.logger.error(`[seeder] Process error: ${error.message}`);
+        resolve({ success: false, error: error.message });
+      });
+    });
+  }
+  
 
 
 }

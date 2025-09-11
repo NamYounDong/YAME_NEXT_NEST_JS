@@ -74,4 +74,60 @@ export class DataCrawlerMapper extends BaseMapper {
           FROM ETL_JOB_RUNS ORDER BY RUN_ID DESC LIMIT ?`;
         return await this.executeQuery(sql, [limit]);
     }
+
+
+
+    async getWikiCategorySeed(seedId: number) {
+        const sql = `
+          SELECT * FROM WIKI_CATEGORY_SEED WHERE SEED_ID=?`;
+        return await this.executeQuery(sql, [seedId]);
+    }
+
+    async getWikiCategoryTodo(seedId: number) {
+        const sql = `
+          SELECT * FROM WIKI_CATEGORY_TODO WHERE SEED_ID=?`;
+        return await this.executeQuery(sql, [seedId]);
+    }
+
+    async getAmcIndexSeed(seedId: number) {
+        const sql = `
+          SELECT * FROM AMC_INDEX_SEED WHERE SEED_ID=?`;
+        return await this.executeQuery(sql, [seedId]);
+    }
+
+    async getAmcIndexTodo(seedId: number) {
+        const sql = `
+          SELECT * FROM AMC_INDEX_TODO WHERE SEED_ID=?`;
+        return await this.executeQuery(sql, [seedId]);
+    }
+
+    async createWikiCategorySeed(category: string, depthLimit: number, includeSubcats: boolean, rps: number) {
+        const sql = `
+          INSERT INTO WIKI_CATEGORY_SEED (ROOT_CATEGORY, DEPTH_LIMIT, INCLUDE_SUBCATS, RPS, STATUS)
+          VALUES (?, ?, ?, ?, 'PENDING')`;
+        return await this.executeQuery(sql, [category, depthLimit, includeSubcats ? 1 : 0, rps]);
+    }
+    
+    async createWikiCategoryTodo(seedId: number, category: string) {
+        const sql = `
+          INSERT INTO WIKI_CATEGORY_TODO (SEED_ID, CATEGORY, DEPTH, STATUS)
+          VALUES (?, ?, 0, 'PENDING')`;
+        return await this.executeQuery(sql, [seedId, category]);
+    }
+    
+    async createAmcIndexSeed(b: { rootUrl: string; paginationMode: string; queryParamName: string; startPage: number; cssNextSelector: string; rps: number }) {
+        const sql = `
+          INSERT INTO AMC_INDEX_SEED (ROOT_URL, PAGINATION_MODE, QUERY_PARAM_NAME, START_PAGE, CSS_NEXT_SELECTOR, RPS, STATUS)
+          VALUES (?, ?, ?, ?, ?, ?, 'PENDING')`;
+        return await this.executeQuery(sql, [b.rootUrl, b.paginationMode, b.queryParamName, b.startPage, b.cssNextSelector, b.rps]);
+    }
+    
+    
+    async createAmcIndexTodo(seedId: number, rootUrl: string, startPage: number) {
+        const sql = `
+          INSERT INTO AMC_INDEX_TODO (SEED_ID, CURRENT_URL, PAGE_NO, STATUS)
+          VALUES (?, ?, ?, 'PENDING')`;
+        return await this.executeQuery(sql, [seedId, rootUrl, startPage]);
+    }
+    
 }
