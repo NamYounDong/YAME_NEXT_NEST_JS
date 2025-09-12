@@ -365,6 +365,13 @@ class WikiFetcher:
     API = 'https://ko.wikipedia.org/w/api.php'
     def __init__(self):
         self.rl = RateLimiter(WIKI_RPS)
+        # WIKI 요청 헤더 설정: UA/수락 헤더(WIKI의 봇 정책 준수: 서비스/연락처 명시)
+        self.session = requests.Session()
+        self.session.headers.update({
+            "User-Agent": "YAME-WikiCrawler/1.0 (+dev.disease.recommend.medicine.service.thankyou; contact: nyd6849@gmail.com)",
+            "Accept": "application/json",
+            "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
+        })
 
     def fetch_title(self, title: str) -> Dict:
         # 레이트리밋

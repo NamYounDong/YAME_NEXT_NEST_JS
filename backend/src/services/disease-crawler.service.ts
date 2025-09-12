@@ -281,53 +281,101 @@ export class DiseaseCrawlerService {
 
   // Python 워커 실행 — once/loop 모드
   async runWorker(mode: 'once'|'loop'='once', maxItems = 10, source?: 'AMC'|'WIKIPEDIA'|'ANY') {
-    const py = process.env.PYTHON_BIN || 'python3';
+    const py = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
     const worker = process.env.PY_WORKER_PATH || './src/ml_src/svrc/disease/crawler_worker.py';
-  
-  
-    // 인자 구성
-    const args = [worker, `--mode=${mode}`, `--max-items=${maxItems}`];
-    if (source) args.push(`--source=${source}`);
-    
-    
-    this.logger.log(`Spawn: ${py} ${args.join(' ')}`);
-    
-    
-    return new Promise<{success:boolean, summary?:any}>((resolve) => {
-      const proc = spawn(py, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-      
-      
-      let summary: any = null; // 워커가 마지막에 JSON 요약 라인 출력
-      
+    const args = [worker, `--mode=${mode}`, `--source=${source}`, `--max-items=${maxItems}`];
+
+    this.logger.log(`Spawn worker : ${py} ${args.join(' ')}`);
+
+    return new Promise((resolve) => {
+      const proc = spawn(py, args, { 
+        stdio: ['ignore', 'pipe', 'pipe'],
+        cwd: process.cwd(),
+        shell: process.platform === 'win32'
+      });
+      let summary: any = null;
+      let stdout = '';
+      let stderr = '';
       
       proc.stdout.on('data', (buf) => {
         const text = buf.toString('utf8');
-        // JSON 라인 캐치(요약)
-        text.split('\n').forEach((line) => {
-          
-          if (!line.trim()) return;
-
-          try {
-            const obj = JSON.parse(line);
-          if (obj && typeof obj === 'object' && (obj.ok || obj.stats)) summary = obj;
-          } catch (_) {
-            // 평소엔 로그 텍스트 — 필요시 logger로 넘김
-            this.logger.log(`[py] ${line.trim()}`);
-          }
-        });
-      });
-    
-    
-      proc.stderr.on('data', (buf) => {
-        this.logger.warn(`[py:err] ${buf.toString('utf8').trim()}`);
+        stdout += text;
+        try { 
+          summary = JSON.parse(text); 
+        } catch { 
+          this.logger.log(`[worker] ${text.trim()}`); 
+        }
       });
       
+      proc.stderr.on('data', (buf) => {
+        const text = buf.toString('utf8');
+        stderr += text;
+        this.logger.warn(`[worker:err] ${text.trim()}`);
+      });
       
       proc.on('close', (code) => {
-        this.logger.log(`Worker exit code=${code}`);
-        resolve({ success: code === 0, summary });
+        this.logger.log(`[worker] Process exited with code: ${code}`);
+        if (code !== 0) {
+          this.logger.error(`[worker] STDOUT: ${stdout}`);
+          this.logger.error(`[worker] STDERR: ${stderr}`);
+        }
+        resolve({ success: code === 0, summary, stdout, stderr });
+      });
+      
+      proc.on('error', (error) => {
+        this.logger.error(`[worker] Process error: ${error.message}`);
+        resolve({ success: false, error: error.message });
       });
     });
+
+    
+    // const py = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+    // const worker = process.env.PY_WORKER_PATH || './src/ml_src/svrc/disease/crawler_worker.py';
+  
+  
+    // // 인자 구성
+    // const args = [worker, `--mode=${mode}`, `--max-items=${maxItems}`];
+    // if (source) args.push(`--source=${source}`);
+    
+    
+    // this.logger.log(`Spawn: ${py} ${args.join(' ')}`);
+    
+    
+    // return new Promise<{success:boolean, summary?:any}>((resolve) => {
+    //   const proc = spawn(py, args, { stdio: ['ignore', 'pipe', 'pipe'] });
+      
+      
+    //   let summary: any = null; // 워커가 마지막에 JSON 요약 라인 출력
+      
+      
+    //   proc.stdout.on('data', (buf) => {
+    //     const text = buf.toString('utf8');
+    //     // JSON 라인 캐치(요약)
+    //     text.split('\n').forEach((line) => {
+          
+    //       if (!line.trim()) return;
+
+    //       try {
+    //         const obj = JSON.parse(line);
+    //       if (obj && typeof obj === 'object' && (obj.ok || obj.stats)) summary = obj;
+    //       } catch (_) {
+    //         // 평소엔 로그 텍스트 — 필요시 logger로 넘김
+    //         this.logger.log(`[py] ${line.trim()}`);
+    //       }
+    //     });
+    //   });
+    
+    
+    //   proc.stderr.on('data', (buf) => {
+    //     this.logger.warn(`[py:err] ${buf.toString('utf8').trim()}`);
+    //   });
+      
+      
+    //   proc.on('close', (code) => {
+    //     this.logger.log(`Worker exit code=${code}`);
+    //     resolve({ success: code === 0, summary });
+    //   });
+    // });
   }
 
 
