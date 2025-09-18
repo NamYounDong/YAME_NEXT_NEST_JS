@@ -724,48 +724,6 @@ CREATE TABLE ITEM_PREGNANCY_CONTRAINDICATION (
 
 
 
-/* =========================================================
-   5) 질병/증상 마스터 테이블
-   - 크롤링 데이터 : 아산병원 질환백과
-========================================================= */
-
--- 1. 질병 마스터 테이블 - 제거
-drop table disease_master;
--- CREATE TABLE IF NOT EXISTS disease_master (
---     disease_id           BIGINT AUTO_INCREMENT PRIMARY KEY,
---     disease_name_kor     VARCHAR(200) NOT NULL,         -- 질병명 (한글)
---     disease_name_eng     VARCHAR(200),                  -- 질병명 (영문, 없을 수 있음)
---     symptoms             TEXT,                          -- 증상 리스트 (쉼표로 구분된 문자열)
---     description          TEXT,                          -- 질병 설명 (본문)
---     source_url           TEXT,                          -- 원본 URL
---     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
--- );
-
--- 1. 질병 마스터 테이블(백업)
-CREATE TABLE IF NOT EXISTS disease_master_bak (
-    disease_id           BIGINT AUTO_INCREMENT PRIMARY KEY,
-    disease_name_kor     VARCHAR(200) NOT NULL,         -- 질병명 (한글)
-    disease_name_eng     VARCHAR(200),                  -- 질병명 (영문, 없을 수 있음)
-    symptoms             TEXT,                          -- 증상 리스트 (쉼표로 구분된 문자열)
-    description          TEXT,                          -- 질병 설명 (본문)
-    source_url           TEXT,                          -- 원본 URL
-    created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-
-/* =========================================================
-   6) 러닝 임베딩 캐시 데이터 ?
-========================================================= */
-CREATE TABLE IF NOT EXISTS  (
-	ITEM_SEQ VARCHAR(20) NOT NULL PRIMARY KEY,
-	TEXT_HASH CHAR(64) NOT NULL, -- 텍스트+모델 해시
-	TEXT_SOURCE LONGTEXT NOT NULL, -- 임베딩에 사용한 원문
-	DIM INT NOT NULL, -- 임베딩 차원
-	EMBEDDING JSON NOT NULL, -- float 배열(JSON)
-	UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-	KEY IDX_EMB_HASH (TEXT_HASH)
-);
-
 
 
 
@@ -791,6 +749,8 @@ CREATE TABLE IF NOT EXISTS SOURCE_PAGE (
   -- UNIQUE KEY UK_SRC (SOURCE, (IFNULL(PAGE_ID, 0)), (IFNULL(REV_ID, 0)), HASH_SHA1),
   KEY IDX_SRC_TITLE (TITLE(200))
 ) COMMENT='원문 페이지 보관(아산/위키, 버전/중복 관리)';
+
+ALTER TABLE SOURCE_PAGE DROP COLUMN IF EXISTS FETCH_DONE; -- FETCH 기능 제외로 인하여 컬럼 제거
 
 ALTER TABLE SOURCE_PAGE
   ADD COLUMN PAGE_ID_NZ BIGINT AS (IFNULL(PAGE_ID, 0)) PERSISTENT,
@@ -824,55 +784,6 @@ CREATE TABLE IF NOT EXISTS SOURCE_SECTION (
 
 
 /* ===========================================
-  SYMPTOM_LEXICON: 증상 표제어(정규화 대상)
-=========================================== */
-CREATE TABLE IF NOT EXISTS SYMPTOM_LEXICON (
-  SYMPTOM_ID BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '컬럼명=SYMPTOM_ID | 설명: 증상 표제어 ID(AUTO_INCREMENT)',
-  CANONICAL_NAME VARCHAR(120) NOT NULL COMMENT '컬럼명=CANONICAL_NAME | 설명: 표준 증상명(예: 오한, 호흡곤란)',
-  ICD10_CODE VARCHAR(10) NULL COMMENT '컬럼명=ICD10_CODE | 설명: (선택) 관련 ICD-10 코드',
-  UMLS_CUI VARCHAR(20) NULL COMMENT '컬럼명=UMLS_CUI | 설명: (선택) UMLS CUI',
-  DESCRIPTION TEXT NULL COMMENT '컬럼명=DESCRIPTION | 설명: 증상 설명(간단 정의)',
-  UNIQUE KEY UK_SYMP_NAME (CANONICAL_NAME)
-) COMMENT='증상 표준 사전(표제어)';
-
-
-
-/* ===========================================
-  SYMPTOM_ALIAS: 증상 별칭(구어/오타 포함)
-=========================================== */
-CREATE TABLE IF NOT EXISTS SYMPTOM_ALIAS (
-  ALIAS_ID BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '컬럼명=ALIAS_ID | 설명: 별칭 레코드 ID(AUTO_INCREMENT)',
-  SYMPTOM_ID BIGINT NOT NULL COMMENT '컬럼명=SYMPTOM_ID | 설명: 연결된 표제어 ID(FK)',
-  ALIAS VARCHAR(200) NOT NULL COMMENT '컬럼명=ALIAS | 설명: 구어체/오타/표현(예: 몸이 떨리고 춥다)',
-  SOURCE ENUM('AMC','WIKIPEDIA','MANUAL','KBMC') NOT NULL COMMENT '컬럼명=SOURCE | 설명: 별칭 출처',
-  CONFIDENCE DECIMAL(4,3) DEFAULT 0.800 COMMENT '컬럼명=CONFIDENCE | 설명: 매핑 신뢰도(0~1)',
-  FOREIGN KEY (SYMPTOM_ID) REFERENCES SYMPTOM_LEXICON(SYMPTOM_ID) ON UPDATE CASCADE ON DELETE CASCADE,
-  UNIQUE KEY UK_ALIAS (ALIAS),
-  KEY IDX_SYMPTOM_ID (SYMPTOM_ID)
-) COMMENT='증상 표제어-별칭 매핑(정규화 사전)';
-
-
-
-/* ===========================================
-  DISEASE_SYMPTOM_MAP: 질병-증상 연결(가중치) 제거
-  - disease_master(disease_id) 존재 가정
-=========================================== */
-drop table DISEASE_SYMPTOM_MAP;
--- CREATE TABLE IF NOT EXISTS DISEASE_SYMPTOM_MAP (
---   DISEASE_ID BIGINT NOT NULL COMMENT '컬럼명=DISEASE_ID | 설명: 질병 ID(FK, disease_master)',
---   SYMPTOM_ID BIGINT NOT NULL COMMENT '컬럼명=SYMPTOM_ID | 설명: 증상 표제어 ID(FK)',
---   WEIGHT_SCORE DECIMAL(5,2) DEFAULT 1.00 COMMENT '컬럼명=WEIGHT_SCORE | 설명: 연관 강도/특이도 기반 가중치',
---   EVIDENCE_SOURCE ENUM('AMC','WIKIPEDIA','DUR','NER') NOT NULL COMMENT '컬럼명=EVIDENCE_SOURCE | 설명: 근거 출처',
---   EVIDENCE_SPAN TEXT NULL COMMENT '컬럼명=EVIDENCE_SPAN | 설명: 근거 문장/섹션 발췌',
---   PRIMARY KEY (DISEASE_ID, SYMPTOM_ID), 
---   FOREIGN KEY (DISEASE_ID) REFERENCES disease_master(disease_id) ON UPDATE CASCADE ON DELETE CASCADE,
---   FOREIGN KEY (SYMPTOM_ID) REFERENCES SYMPTOM_LEXICON(SYMPTOM_ID) ON UPDATE CASCADE ON DELETE CASCADE,
---   KEY IDX_MAP_SYMPTOM (SYMPTOM_ID),
---   KEY IDX_MAP_DISEASE (DISEASE_ID)
--- ) COMMENT='질병-증상 매핑(증상 기반 후보 검색/재랭킹에 사용)';
-
-
-/* ===========================================
   NER_CORPUS_REGISTRY: 코퍼스/모델 아티팩트 메타
 =========================================== */
 CREATE TABLE IF NOT EXISTS NER_CORPUS_REGISTRY (
@@ -886,21 +797,6 @@ CREATE TABLE IF NOT EXISTS NER_CORPUS_REGISTRY (
   IMPORTED_AT DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '컬럼명=IMPORTED_AT | 설명: 반입 시각',
   UNIQUE KEY UK_CORPUS_NAME (NAME)
 ) COMMENT='NER 코퍼스/모델 메타(추적/재현성)';
-
-
-/* ===========================================
-  : 임베딩 캐시(요청 반영)
-  - 텍스트+모델 해시로 멱등 캐싱
-=========================================== */
-CREATE TABLE IF NOT EXISTS DISEASE_EMBEDDING_ITEM (
-  ITEM_SEQ VARCHAR(64) NOT NULL PRIMARY KEY COMMENT '컬럼명=ITEM_SEQ | 설명: 임베딩 항목 ID(예: 해시 또는 UUID)',
-  TEXT_HASH CHAR(64) NOT NULL COMMENT '컬럼명=TEXT_HASH | 설명: (텍스트+모델명) SHA-256 해시',
-  TEXT_SOURCE LONGTEXT NOT NULL COMMENT '컬럼명=TEXT_SOURCE | 설명: 임베딩 대상 원문(질병 설명/증상 문장 등)',
-  DIM INT NOT NULL COMMENT '컬럼명=DIM | 설명: 임베딩 차원',
-  EMBEDDING JSON NOT NULL COMMENT '컬럼명=EMBEDDING | 설명: float 배열(JSON)',
-  UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '컬럼명=UPDATED_AT | 설명: 업데이트 시각',
-  KEY IDX_TEXT_HASH (TEXT_HASH)
-) COMMENT='임베딩 캐시(증상/질병 검색·재랭킹 가속)';
 
 
 
@@ -1122,24 +1018,7 @@ CREATE INDEX IF NOT EXISTS IX_WIKI_TODO_SEED   ON WIKI_CATEGORY_TODO (SEED_ID, S
 
 
 
--- 1) 원문 수집(Fetch) 큐 → HTML/Text 저장
--- SOURCE_PAGE.URL을 실제로 가져와 원문을 저장하는 단계예요. 실패/재시도 관리가 핵심입니다.
--- 원문 페치 결과 저장
-CREATE TABLE IF NOT EXISTS SOURCE_PAGE_FETCH (
-	FETCH_ID BIGINT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-	SOURCE_PAGE_ID BIGINT NOT NULL,
-	HTTP_STATUS INT NULL,
-	CONTENT_TYPE VARCHAR(120) NULL,
-	RAW_HTML MEDIUMTEXT NULL,
-	EXTRACTED_TEXT LONGTEXT NULL,
-	CONTENT_HASH CHAR(64) NULL,
-	FETCHED_AT DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	ERROR_MSG TEXT NULL,
-	UNIQUE KEY UK_SRC_FETCH_ONCE (SOURCE_PAGE_ID),
-	KEY IDX_SRC_FETCH_AT (FETCHED_AT),
-	CONSTRAINT FK_FETCH_TO_PAGE FOREIGN KEY (SOURCE_PAGE_ID)
-	REFERENCES SOURCE_PAGE(SOURCE_PAGE_ID) ON DELETE CASCADE
-) COMMENT='원문 페이지 페치 결과';
+
 
 -- 질병 마스터
 CREATE TABLE IF NOT EXISTS DISEASE_MASTER (
@@ -1159,136 +1038,200 @@ CREATE TABLE IF NOT EXISTS DISEASE_MASTER (
 	REFERENCES SOURCE_PAGE(SOURCE_PAGE_ID) ON DELETE SET NULL
 ) ;
 
-
--- 질병 동의어(표기 변형/소스별 제목)
-CREATE TABLE IF NOT EXISTS DISEASE_ALIAS (
-	ALIAS_ID BIGINT AUTO_INCREMENT PRIMARY KEY,
-	DISEASE_ID BIGINT NOT NULL,
-	ALIAS_NAME VARCHAR(200) NOT NULL,
-	SOURCE ENUM('AMC','WIKIPEDIA','OTHER') NOT NULL,
-	CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	UNIQUE KEY UK_DISEASE_ALIAS (DISEASE_ID, ALIAS_NAME, SOURCE),
-	KEY IDX_ALIAS_NAME (ALIAS_NAME),
-	CONSTRAINT FK_ALIAS_TO_DISEASE FOREIGN KEY (DISEASE_ID)
-	REFERENCES DISEASE_MASTER(DISEASE_ID) ON DELETE CASCADE
-) ;
-
-
--- 증상 표준 사전
-CREATE TABLE IF NOT EXISTS SYMPTOM_MASTER (
-	SYMPTOM_ID BIGINT AUTO_INCREMENT PRIMARY KEY,
-	CANONICAL VARCHAR(200) NOT NULL,
-	ALIASES JSON NULL,
-	CREATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-	UNIQUE KEY UK_SYMPTOM_CANONICAL (CANONICAL)
-) ;
-
-
--- 질병-증상 연결(M:N)
-CREATE TABLE IF NOT EXISTS DISEASE_SYMPTOM (
-	DISEASE_ID BIGINT NOT NULL,
-	SYMPTOM_ID BIGINT NOT NULL,
-	WEIGHT DECIMAL(5,2) NULL,
-	PRIMARY KEY (DISEASE_ID, SYMPTOM_ID),
-	KEY IDX_DS_SYM (SYMPTOM_ID),
-	CONSTRAINT FK_DS_DISEASE FOREIGN KEY (DISEASE_ID)
-	REFERENCES DISEASE_MASTER(DISEASE_ID) ON DELETE CASCADE,
-	CONSTRAINT FK_DS_SYMPTOM FOREIGN KEY (SYMPTOM_ID)
-	REFERENCES SYMPTOM_MASTER(SYMPTOM_ID) ON DELETE CASCADE
-) ;
+ 
+  
+  
+  -- SOURCE_PAGE ← 이미 운용 중인 수집 원천 저장소(원문 보존)
+-- (필요시) 명확한 키와 본문/제목/메타 보강 컬럼 제안
+ALTER TABLE SOURCE_PAGE
+  ADD COLUMN PAGE_TYPE ENUM('ARTICLE','CATEGORY','QA','WIKI') NULL COMMENT '원문 유형',
+  ADD COLUMN CANONICAL_TITLE VARCHAR(500) NULL COMMENT '정규화 제목',
+  ADD COLUMN CONTENT LONGTEXT NULL COMMENT '본문(정제 텍스트)',
+  ADD COLUMN META_JSON JSON NULL COMMENT '추출 메타(JSON: 섹션/카테고리/태그 등)',
+  ADD COLUMN PARSED_AT DATETIME NULL COMMENT '정규화(파싱) 시각';
 
 
 
 
--- 1) SYMPTOM_PHRASE_LOG — “현장에서 본 표현”을 잔고장 없이 수집
--- 용도: 파서/실시간 추론에서 관측한 **원문 증상 구(phrase)**를 중복 없이 쌓고, 등장량을 카운팅합니다.
--- 활용: 많이 등장하지만 아직 정규화되지 않은 표현을 찾아, 사전/모델 개선 대상으로 삼습니다.
--- 사용자가 쓴 '자연어 표현'을 원형 그대로 수집하는 로그 테이블
-CREATE TABLE IF NOT EXISTS SYMPTOM_PHRASE_LOG (
-  PHRASE_ID   BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
-              COMMENT '레코드 고유 ID',
-  PHRASE      VARCHAR(300) NOT NULL
-              COMMENT '원문 증상 표현(예: "몸이 으슬으슬", "속이 쓰림")',
-  LANG        VARCHAR(8) NOT NULL DEFAULT 'ko'
-              COMMENT '언어 코드(예: ko, en)',
-  SOURCE      ENUM('AMC','WIKIPEDIA','OTHER','USER') NOT NULL DEFAULT 'USER'
-              COMMENT '표현이 수집된 소스',
-  SEEN_COUNT  INT NOT NULL DEFAULT 1
-              COMMENT '등장 횟수(중복 업서트 시 +1)',
-  FIRST_SEEN  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-              COMMENT '최초 관측 시각',
-  LAST_SEEN   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
-              COMMENT '마지막 관측 시각(업서트 시 NOW로 업데이트 권장)',
-  UNIQUE KEY UK_PHRASE_SRC (PHRASE, SOURCE),
-  FULLTEXT KEY FT_PHRASE (PHRASE)
-) COMMENT='원문 증상 표현 로그(정규화/학습 후보 수집)';
-
--- 2) SYMPTOM_ALIAS_MAP — 표현↔표준증상 매핑(자동/보류/승인)
--- 용도: 임베딩/분류기/룰/사람 검수로 원문 표현 → 표준 증상을 연결하고, 상태를 관리합니다.
--- 활용: STATUS='auto'|'approved'가 된 항목은 ETL이 즉시 DISEASE_SYMPTOM 링크에 반영하여 정규화 품질을 키웁니다.
--- 원문 표현(PHRASE)을 표준 증상(SYMPTOM_ID)으로 매핑한 결과/후보 저장
-CREATE TABLE IF NOT EXISTS SYMPTOM_ALIAS_MAP (
-  ALIAS_ID    BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
-              COMMENT '별칭 매핑 레코드 ID',
-  PHRASE      VARCHAR(300) NOT NULL
-              COMMENT '원문 증상 표현',
-  SYMPTOM_ID  BIGINT NULL
-              COMMENT '매핑된 표준 증상 ID(SYMPTOM_MASTER FK, 없으면 신설 후보)',
-  METHOD      ENUM('rule','embed-sim','classifier','human') NOT NULL
-              COMMENT '매핑 방법(룰/임베딩유사도/분류기/사람검수)',
-  MODEL_KEY   VARCHAR(120) NULL
-              COMMENT '사용 모델 식별자(예: sbert-ko-20250911)',
-  SCORE       DECIMAL(6,4) NULL
-              COMMENT '유사도/신뢰도 점수(코사인 등)',
-  STATUS      ENUM('pending','auto','approved','rejected') NOT NULL DEFAULT 'pending'
-              COMMENT '보류/자동승인/승인/반려',
-  UPDATED_BY  VARCHAR(80) NULL
-              COMMENT '검수자(사람) ID 또는 배치 식별자',
-  UPDATED_AT  TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-              ON UPDATE CURRENT_TIMESTAMP
-              COMMENT '마지막 갱신 시각',
-  NOTES       TEXT NULL
-              COMMENT '비고(근거, 판단 사유 등)',
-  UNIQUE KEY UK_ALIAS_METHOD (PHRASE, METHOD, MODEL_KEY),
-  KEY IDX_ALIAS_STATUS (STATUS),
-  KEY IDX_ALIAS_SYM (SYMPTOM_ID),
-  CONSTRAINT FK_ALIASMAP_TO_SYM
-    FOREIGN KEY (SYMPTOM_ID) REFERENCES SYMPTOM_MASTER(SYMPTOM_ID)
-    ON DELETE SET NULL
-) COMMENT='증상 별칭 매핑 결과(표현→표준증상, 자동/보류/승인/반려 상태 관리)';
 
 
--- 3) SYMPTOM_EMBEDDING — 표준 증상 임베딩 캐시(모델별 버전 관리)
--- 용도: 표준 증상(CANONICAL)에 대한 임베딩을 모델별로 캐시합니다.
--- 활용: 런타임 “근접 탐색(코사인/ANN)” 속도↑, 재현성↑. 새로운 모델을 쓰면 MODEL_KEY만 바꾸어 공존 운영.
--- 표준 증상(CANONICAL)의 문장 임베딩 캐시(모델 버전별로 보관)
+
+
+/* =========================================================
+  CREATE TABLES: SYMPTOM/DISEASE PIPELINE (RESET VERSION)
+  Author : YAME (Digital Triage)
+  Charset: utf8mb4
+========================================================= */
+
+-- --------------------------------------------------------
+-- 0) 운영 사전(코드 하드코딩 제거의 핵심)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS LEXICON_TERM (
+  TERM_ID     BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
+               COMMENT '사전 항목 ID',
+  TERM_TEXT   VARCHAR(200) NOT NULL
+               COMMENT '용어(일상어/의학어/오타 포함)',
+  TERM_TYPE   ENUM('SYMPTOM','DISEASE','UNKNOWN') NOT NULL DEFAULT 'UNKNOWN'
+               COMMENT '의도 타입 분류',
+  SOURCE_TAG  VARCHAR(50) NOT NULL DEFAULT 'MANUAL'
+               COMMENT '사전 항목 출처: MANUAL|BOOTSTRAP|NER|IMPORT',
+  ACTIVE_YN   TINYINT(1) NOT NULL DEFAULT 1
+               COMMENT '사용 여부(1=활성)',
+  UNIQUE KEY UK_LEXICON_TERM (TERM_TEXT, TERM_TYPE)
+) COMMENT='운영 사전(증상/질병·동의어 사전의 공급원, 코드 하드코딩 금지)';
+
+-- --------------------------------------------------------
+-- 1) STAGING: HTML → 텍스트, 후보 추출 결과
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS STG_PAGE_TEXT (
+  PAGE_ID         BIGINT NOT NULL
+                    COMMENT 'SOURCE_PAGE.PK',
+  TEXT_HASH       CHAR(64) NOT NULL
+                    COMMENT '정제 텍스트 SHA-256',
+  CLEAN_TEXT      LONGTEXT NOT NULL
+                    COMMENT 'HTML 본문 정제 텍스트',
+  LANG            VARCHAR(8) NOT NULL DEFAULT 'ko'
+                    COMMENT '언어코드',
+  CREATED_AT      TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+                    COMMENT '적재 시각',
+  PRIMARY KEY (PAGE_ID),
+  UNIQUE KEY UK_STG_PAGE_TEXT (TEXT_HASH),
+  CONSTRAINT FK_STG_TXT_TO_SRC FOREIGN KEY (PAGE_ID)
+    REFERENCES SOURCE_PAGE(SOURCE_PAGE_ID) ON DELETE CASCADE
+) COMMENT='[stg] HTML 파싱된 클린 텍스트(페이지 단위)';
+
+CREATE TABLE IF NOT EXISTS STG_EXTRACT_TERM (
+  ID             BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
+                   COMMENT '행 ID',
+  PAGE_ID        BIGINT NOT NULL
+                   COMMENT 'SOURCE_PAGE.PK',
+  TERM_TEXT      VARCHAR(500) NOT NULL
+                   COMMENT '추출된 원문 용어/구(단어/서술)',
+  TERM_NORM      VARCHAR(500) NULL
+                   COMMENT '초기 정규화(소문자/기본형 등)',
+  TERM_TYPE      ENUM('SYMPTOM','DISEASE','UNKNOWN') NOT NULL DEFAULT 'UNKNOWN'
+                   COMMENT '예측 유형(규칙/NER/사전 종합)',
+  SOURCE_TAG     VARCHAR(50) NOT NULL
+                   COMMENT '추출기 태그: RULE|NER|LEXICON|POS 등',
+  CONFIDENCE     DECIMAL(5,4) NOT NULL DEFAULT 0.0000
+                   COMMENT '0~1 신뢰도',
+  CONTEXT_SNIPPET VARCHAR(1000) NULL
+                   COMMENT '문맥 일부(근거)',
+  OFFSETS        VARCHAR(50) NULL
+                   COMMENT '문장 내 위치 "start:end"',
+  CREATED_AT     TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  KEY IDX_STG_EXT_PAGE (PAGE_ID),
+  KEY IDX_STG_EXT_TYPE (TERM_TYPE, CONFIDENCE),
+  CONSTRAINT FK_STG_EXT_TO_SRC FOREIGN KEY (PAGE_ID)
+    REFERENCES SOURCE_PAGE(SOURCE_PAGE_ID) ON DELETE CASCADE
+) COMMENT='[stg] 증상/질병 후보(단어·구/서술). NER/사전/규칙 혼합 결과';
+
+-- --------------------------------------------------------
+-- 2) DIM: 표준 증상/질병 마스터
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS DIM_SYMPTOM (
+  SYMPTOM_ID   BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
+                COMMENT '증상 ID',
+  NAME_KO      VARCHAR(200) NOT NULL
+                COMMENT '표준 증상명(한글, 표제어)',
+  NAME_EN      VARCHAR(200) NULL
+                COMMENT '표준 증상명(영문, 선택)',
+  DEF_TEXT     TEXT NULL
+                COMMENT '정의/설명(요약, 선택)',
+  CREATED_AT   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UPDATED_AT   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY UK_SYMPTOM_NAME (NAME_KO)
+) COMMENT='[dim] 표준 증상 마스터';
+
+CREATE TABLE IF NOT EXISTS DIM_DISEASE (
+  DISEASE_ID   BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
+                COMMENT '질병 ID',
+  NAME_KO      VARCHAR(200) NOT NULL
+                COMMENT '표준 질병명(한글, 표제어)',
+  NAME_EN      VARCHAR(200) NULL
+                COMMENT '표준 질병명(영문, 선택)',
+  DEF_TEXT     TEXT NULL
+                COMMENT '정의/설명(요약, 선택)',
+  CREATED_AT   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UPDATED_AT   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY UK_DISEASE_NAME (NAME_KO)
+) COMMENT='[dim] 표준 질병 마스터';
+
+-- --------------------------------------------------------
+-- 3) BRIDGE: 표준 ↔ 동의어/일상어
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS BR_SYMPTOM_ALIAS (
+  ALIAS_ID     BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
+                COMMENT '동의어 ID',
+  SYMPTOM_ID   BIGINT UNSIGNED NOT NULL
+                COMMENT 'DIM_SYMPTOM.FK',
+  ALIAS_TEXT   VARCHAR(200) NOT NULL
+                COMMENT '동의어/일상어/오타 등',
+  SOURCE_TAG   VARCHAR(50) NOT NULL
+                COMMENT '생성 출처: RULE|NER|MERGE|MANUAL|IMPORT',
+  UNIQUE KEY UK_SYM_ALIAS (SYMPTOM_ID, ALIAS_TEXT),
+  KEY IDX_SYM_ALIAS_TEXT (ALIAS_TEXT),
+  CONSTRAINT FK_BR_SYM_ALIAS FOREIGN KEY (SYMPTOM_ID)
+    REFERENCES DIM_SYMPTOM(SYMPTOM_ID) ON DELETE CASCADE
+) COMMENT='[bridge] 증상 동의어/일상어 사전';
+
+CREATE TABLE IF NOT EXISTS BR_DISEASE_ALIAS (
+  ALIAS_ID     BIGINT UNSIGNED NOT NULL PRIMARY KEY AUTO_INCREMENT
+                COMMENT '동의어 ID',
+  DISEASE_ID   BIGINT UNSIGNED NOT NULL
+                COMMENT 'DIM_DISEASE.FK',
+  ALIAS_TEXT   VARCHAR(200) NOT NULL
+                COMMENT '동의어/일상어/오타 등',
+  SOURCE_TAG   VARCHAR(50) NOT NULL
+                COMMENT '생성 출처',
+  UNIQUE KEY UK_DIS_ALIAS (DISEASE_ID, ALIAS_TEXT),
+  KEY IDX_DIS_ALIAS_TEXT (ALIAS_TEXT),
+  CONSTRAINT FK_BR_DIS_ALIAS FOREIGN KEY (DISEASE_ID)
+    REFERENCES DIM_DISEASE(DISEASE_ID) ON DELETE CASCADE
+) COMMENT='[bridge] 질병 동의어/일상어 사전';
+
+-- --------------------------------------------------------
+-- 4) EMBEDDING: 검색/추론 가속 캐시(모델 버전 구분)
+-- --------------------------------------------------------
 CREATE TABLE IF NOT EXISTS SYMPTOM_EMBEDDING (
-  SYMPTOM_ID BIGINT NOT NULL COMMENT '표준 증상 ID(SYMPTOM_MASTER FK)',
-  MODEL_KEY  VARCHAR(120) NOT NULL COMMENT '모델 식별자(예: sbert-ko-20250911)',
-  DIM        INT NOT NULL COMMENT '임베딩 차원',
-  `VECTOR`     JSON NOT NULL COMMENT 'float 배열(JSON 직렬화)',
-  UPDATED_AT TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '갱신 시각',
+  SYMPTOM_ID   BIGINT UNSIGNED NOT NULL COMMENT 'DIM_SYMPTOM.FK',
+  MODEL_KEY    VARCHAR(120) NOT NULL COMMENT '모델 식별자(ex: sbert-ko-sts-202509)',
+  DIM          INT NOT NULL COMMENT '임베딩 차원',
+  `VECTOR`       JSON NOT NULL COMMENT 'float[] JSON 직렬화',
+  UPDATED_AT   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (SYMPTOM_ID, MODEL_KEY),
-  CONSTRAINT FK_SYM_EMB_TO_SYM FOREIGN KEY (SYMPTOM_ID) REFERENCES SYMPTOM_MASTER(SYMPTOM_ID) ON DELETE CASCADE
-) COMMENT='표준 증상 임베딩 캐시(모델 버전별, 근접탐색 가속)';
+  CONSTRAINT FK_SYM_EMB FOREIGN KEY (SYMPTOM_ID) REFERENCES DIM_SYMPTOM(SYMPTOM_ID) ON DELETE CASCADE
+) COMMENT='[emb] 증상 임베딩 캐시';
 
--- 4) ML_MODEL_REGISTRY — 임베딩/분류기 등 모델 메타 저장
--- 용도: 어떤 모델을 언제 어떤 설정/성능으로 돌렸는지 한 줄 요약을 남깁니다.
--- 활용: 재현성(버전 고정), 성능 비교, 롤백 근거로 사용.
--- 임베딩/분류기 등 ML 모델 메타데이터(버전/지표) 레지스트리
-CREATE TABLE IF NOT EXISTS ML_MODEL_REGISTRY (
-  MODEL_KEY  VARCHAR(120) NOT NULL PRIMARY KEY
-             COMMENT '모델 식별자(예: sbert-ko-20250911)',
-  TYPE       VARCHAR(40)  NOT NULL
-             COMMENT '모델 유형(예: sentence-embedding, multilabel-classifier)',
-  DIM        INT          NOT NULL
-             COMMENT '임베딩 차원 또는 클래스 수 등 핵심 치수',
-  VERSION    VARCHAR(40)  NULL
-             COMMENT '세부 버전/체크포인트 명',
-  TRAINED_AT DATETIME     NULL
-             COMMENT '학습 또는 등록 시각',
-  METRICS    JSON         NULL
-             COMMENT '평가 지표(JSON: {\"val_acc\":..., \"ap\":...})',
-  NOTES      TEXT         NULL
-             COMMENT '비고(학습 데이터 스냅샷 경로, 특징, 주석 등)'
-) COMMENT='ML 모델 레지스트리(버전/지표/노트)';
+CREATE TABLE IF NOT EXISTS DISEASE_EMBEDDING (
+  DISEASE_ID   BIGINT UNSIGNED NOT NULL COMMENT 'DIM_DISEASE.FK',
+  MODEL_KEY    VARCHAR(120) NOT NULL COMMENT '모델 식별자',
+  DIM          INT NOT NULL COMMENT '임베딩 차원',
+  `VECTOR`       JSON NOT NULL COMMENT 'float[] JSON 직렬화',
+  UPDATED_AT   TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (DISEASE_ID, MODEL_KEY),
+  CONSTRAINT FK_DIS_EMB FOREIGN KEY (DISEASE_ID) REFERENCES DIM_DISEASE(DISEASE_ID) ON DELETE CASCADE
+) COMMENT='[emb] 질병 임베딩 캐시';
+
+-- --------------------------------------------------------
+-- 5) FACT: 증상 ↔ 질병 연관(추론용)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS FACT_SYMPTOM_DISEASE (
+  SYMPTOM_ID    BIGINT UNSIGNED NOT NULL
+                 COMMENT 'DIM_SYMPTOM.FK',
+  DISEASE_ID    BIGINT UNSIGNED NOT NULL
+                 COMMENT 'DIM_DISEASE.FK',
+  SCORE         DECIMAL(6,4) NOT NULL
+                 COMMENT '0~1 연관 스코어(가중 공출현/룰/NER)',
+  EVIDENCE_JSON JSON NULL
+                 COMMENT '근거(문헌수/페이지/문장id/추출소스별 가중 등)',
+  UPDATED_AT    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (SYMPTOM_ID, DISEASE_ID),
+  KEY IDX_FSD_SCORE (SCORE DESC),
+  CONSTRAINT FK_FSD_SYM FOREIGN KEY (SYMPTOM_ID)
+    REFERENCES DIM_SYMPTOM(SYMPTOM_ID) ON DELETE CASCADE,
+  CONSTRAINT FK_FSD_DIS FOREIGN KEY (DISEASE_ID)
+    REFERENCES DIM_DISEASE(DISEASE_ID) ON DELETE CASCADE
+) COMMENT='[fact] 증상-질병 연관 매핑(프롬프트 추론용)';
+
+

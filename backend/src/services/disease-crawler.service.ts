@@ -23,10 +23,9 @@ import { Injectable, Logger } from '@nestjs/common';
 import axios from 'axios';
 import * as cheerio from 'cheerio';
 import * as path from 'path';
-import * as readline from 'readline';
-import { spawn } from 'child_process';
 import { ConfigService } from '@nestjs/config';
 import { DataCrawlerMapper } from 'src/database/data-crawler.mapper';
+import { executePythonScript } from 'src/utils/python-script.util';
 
 @Injectable()
 export class DiseaseCrawlerService {
@@ -222,41 +221,32 @@ export class DiseaseCrawlerService {
     const args = this.buildArgs(opts);
     this.logger.log(`Running python: ${this.pythonBin} ${args.join(' ')}`);
 
-    let summary: any = null; // 스크립트가 마지막에 {"ok": true, "inserted_or_upserted": N}
-    const proc = spawn(this.pythonBin, args, { cwd: process.cwd(), env: process.env });
+    try {
+      // 공통 executePythonScript 함수를 사용하여 스크립트 실행
+      const result = await executePythonScript({
+        scriptPath: this.scriptPath,
+        args: args.slice(1), // 첫 번째 요소(scriptPath)는 제외하고 나머지 인수만 전달
+        cwd: process.cwd(),
+        env: process.env,
+        expectJsonResponse: true,
+        enableLogging: true
+      }, this.logger);
 
-    const rlOut = readline.createInterface({ input: proc.stdout });
-    rlOut.on('line', (line) => {
-      // 진행 로그는 무시하고, JSON형 라인이면 마지막 요약으로 저장
-      try {
-        const obj = JSON.parse(line);
-        if (obj && typeof obj === 'object' && ('ok' in obj || 'inserted_or_upserted' in obj)) {
-          summary = obj;
-        }
-      } catch {
-        // 평소에는 파서가 많은 텍스트를 안 찍지만, 찍어도 그냥 통과
+      if (!result.success) {
+        throw new Error(`Python exited with code ${result.exitCode}. 스크립트/환경 설정을 확인하세요.`);
       }
-    });
 
-    const rlErr = readline.createInterface({ input: proc.stderr });
-    rlErr.on('line', (line) => this.logger.log(`[py] ${line}`));
-
-    const exitCode: number = await new Promise((resolve, reject) => {
-      proc.on('error', reject);
-      proc.on('close', (code) => resolve(code ?? -1));
-    });
-
-    if (exitCode !== 0) {
-      throw new Error(`Python exited with code ${exitCode}. 스크립트/환경 설정을 확인하세요.`);
+      // 요약이 없으면 대략 성공만 반환
+      return {
+        success: true,
+        dumpPath: opts.dumpPath || this.defaultDump,
+        args,
+        summary: result.jsonResponse ?? { note: '스크립트가 요약 JSON을 출력하지 않았습니다.' },
+      };
+    } catch (error) {
+      this.logger.error(`나무위키 덤프 크롤링 실패: ${error.message}`);
+      throw error;
     }
-
-    // 요약이 없으면 대략 성공만 반환
-    return {
-      success: true,
-      dumpPath: opts.dumpPath || this.defaultDump,
-      args,
-      summary: summary ?? { note: '스크립트가 요약 JSON을 출력하지 않았습니다.' },
-    };
   }
 
 
@@ -281,101 +271,57 @@ export class DiseaseCrawlerService {
 
   // Python 워커 실행 — once/loop 모드
   async runWorker(mode: 'once'|'loop'='once', maxItems = 10, source?: 'AMC'|'WIKIPEDIA'|'ANY') {
+
     const py = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
-    const worker = process.env.PY_WORKER_PATH || './src/ml_src/svrc/disease/crawler_worker.py';
+    const worker = process.env.PY_WORKER_PATH + '/svrc/disease/crawler_worker.py' || './src/ml_src/svrc/disease/crawler_worker.py';
     const args = [worker, `--mode=${mode}`, `--source=${source}`, `--max-items=${maxItems}`];
 
     this.logger.log(`Spawn worker : ${py} ${args.join(' ')}`);
 
-    return new Promise((resolve) => {
-      const proc = spawn(py, args, { 
-        stdio: ['ignore', 'pipe', 'pipe'],
-        cwd: process.cwd(),
-        shell: process.platform === 'win32'
-      });
-      let summary: any = null;
-      let stdout = '';
-      let stderr = '';
-      
-      proc.stdout.on('data', (buf) => {
-        const text = buf.toString('utf8');
-        stdout += text;
-        try { 
-          summary = JSON.parse(text); 
-        } catch { 
-          this.logger.log(`[worker] ${text.trim()}`); 
-        }
-      });
-      
-      proc.stderr.on('data', (buf) => {
-        const text = buf.toString('utf8');
-        stderr += text;
-        this.logger.warn(`[worker:err] ${text.trim()}`);
-      });
-      
-      proc.on('close', (code) => {
-        this.logger.log(`[worker] Process exited with code: ${code}`);
-        if (code !== 0) {
-          this.logger.error(`[worker] STDOUT: ${stdout}`);
-          this.logger.error(`[worker] STDERR: ${stderr}`);
-        }
-        resolve({ success: code === 0, summary, stdout, stderr });
-      });
-      
-      proc.on('error', (error) => {
-        this.logger.error(`[worker] Process error: ${error.message}`);
-        resolve({ success: false, error: error.message });
-      });
-    });
+    const clawlerResult = await executePythonScript({
+      scriptPath: worker,
+      args: args,
+      cwd: process.cwd(),
+      env: process.env,
+      expectJsonResponse: true,
+      enableLogging: true
+    }, this.logger);
 
-    
-    // const py = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
-    // const worker = process.env.PY_WORKER_PATH || './src/ml_src/svrc/disease/crawler_worker.py';
-  
-  
-    // // 인자 구성
-    // const args = [worker, `--mode=${mode}`, `--max-items=${maxItems}`];
-    // if (source) args.push(`--source=${source}`);
-    
-    
-    // this.logger.log(`Spawn: ${py} ${args.join(' ')}`);
-    
-    
-    // return new Promise<{success:boolean, summary?:any}>((resolve) => {
-    //   const proc = spawn(py, args, { stdio: ['ignore', 'pipe', 'pipe'] });
-      
-      
-    //   let summary: any = null; // 워커가 마지막에 JSON 요약 라인 출력
-      
-      
-    //   proc.stdout.on('data', (buf) => {
-    //     const text = buf.toString('utf8');
-    //     // JSON 라인 캐치(요약)
-    //     text.split('\n').forEach((line) => {
-          
-    //       if (!line.trim()) return;
+    // EMBEDDING 실행 순서
+    // 1. etl_disease_master_ingest.py로 DISEASE_MASTER, SYMPTOM_MASTER, DISEASE_SYMPTOM 적재
+    // 2. build_symptom_embeddings.py 실행 → SYMPTOM_EMBEDDING 생성
+    // 3. build_disease_embeddings.py 실행 → disease_embedding_item 생성
 
-    //       try {
-    //         const obj = JSON.parse(line);
-    //       if (obj && typeof obj === 'object' && (obj.ok || obj.stats)) summary = obj;
-    //       } catch (_) {
-    //         // 평소엔 로그 텍스트 — 필요시 logger로 넘김
-    //         this.logger.log(`[py] ${line.trim()}`);
-    //       }
-    //     });
-    //   });
+    const etlScriptPath = process.env.PY_WORKER_PATH + '/svrc/disease/etl_disease_master_ingest.py' || './src/ml_src/svrc/disease/etl_disease_master_ingest.py';
+    const symptomEmbeddingScriptPath = process.env.PY_WORKER_PATH + '/svrc/disease/build_symptom_embeddings.py' || './src/ml_src/svrc/disease/build_symptom_embeddings.py';
+    const diseaseEmbeddingScriptPath = process.env.PY_WORKER_PATH + '/svrc/disease/build_disease_embeddings.py' || './src/ml_src/svrc/disease/build_disease_embeddings.py';
     
-    
-    //   proc.stderr.on('data', (buf) => {
-    //     this.logger.warn(`[py:err] ${buf.toString('utf8').trim()}`);
-    //   });
-      
-      
-    //   proc.on('close', (code) => {
-    //     this.logger.log(`Worker exit code=${code}`);
-    //     resolve({ success: code === 0, summary });
-    //   });
-    // });
+    const etlResult = await executePythonScript({
+      scriptPath: etlScriptPath,
+      cwd: process.cwd(),
+      env: process.env,
+      expectJsonResponse: true,
+      enableLogging: true
+    }, this.logger);
+
+    const symptomEmbeddingResult = await executePythonScript({
+      scriptPath: symptomEmbeddingScriptPath,
+      cwd: process.cwd(),
+      env: process.env,
+      expectJsonResponse: true,
+      enableLogging: true
+    }, this.logger);
+
+    const diseaseEmbeddingResult = await executePythonScript({
+      scriptPath: diseaseEmbeddingScriptPath,
+      cwd: process.cwd(),
+      env: process.env,
+      expectJsonResponse: true,
+      enableLogging: true
+    }, this.logger);
+
+
+    return clawlerResult
   }
 
 
@@ -412,53 +358,33 @@ export class DiseaseCrawlerService {
     }
   }
 
-  runSeeder(type: 'WIKI'|'AMC', seedId: number, timeBudgetSec: number, maxApiCalls: number) {
-    const py = process.env.PYTHON_BIN || (process.platform === 'win32' ? 'python' : 'python3');
+  async runSeeder(type: 'WIKI'|'AMC', seedId: number, timeBudgetSec: number, maxApiCalls: number) {
     const worker = process.env.PY_WORKER_PATH || './src/ml_src/svrc/disease/crawler_worker.py';
-    const args = [worker, `--mode=discovery`, `--seed-type=${type}`, `--seed-id=${seedId}`, `--time-budget=${timeBudgetSec}`, `--max-api-calls=${maxApiCalls}`];
+    const args = [`--mode=discovery`, `--seed-type=${type}`, `--seed-id=${seedId}`, `--time-budget=${timeBudgetSec}`, `--max-api-calls=${maxApiCalls}`];
 
-    this.logger.log(`Spawn seeder: ${py} ${args.join(' ')}`);
+    this.logger.log(`Spawn seeder: ${worker} ${args.join(' ')}`);
 
-    return new Promise((resolve) => {
-      const proc = spawn(py, args, { 
-        stdio: ['ignore', 'pipe', 'pipe'],
+    try {
+      // 공통 executePythonScript 함수를 사용하여 스크립트 실행
+      const result = await executePythonScript({
+        scriptPath: worker,
+        args,
         cwd: process.cwd(),
-        shell: process.platform === 'win32'
-      });
-      let summary: any = null;
-      let stdout = '';
-      let stderr = '';
-      
-      proc.stdout.on('data', (buf) => {
-        const text = buf.toString('utf8');
-        stdout += text;
-        try { 
-          summary = JSON.parse(text); 
-        } catch { 
-          this.logger.log(`[seeder] ${text.trim()}`); 
-        }
-      });
-      
-      proc.stderr.on('data', (buf) => {
-        const text = buf.toString('utf8');
-        stderr += text;
-        this.logger.warn(`[seeder:err] ${text.trim()}`);
-      });
-      
-      proc.on('close', (code) => {
-        this.logger.log(`[seeder] Process exited with code: ${code}`);
-        if (code !== 0) {
-          this.logger.error(`[seeder] STDOUT: ${stdout}`);
-          this.logger.error(`[seeder] STDERR: ${stderr}`);
-        }
-        resolve({ success: code === 0, summary, stdout, stderr });
-      });
-      
-      proc.on('error', (error) => {
-        this.logger.error(`[seeder] Process error: ${error.message}`);
-        resolve({ success: false, error: error.message });
-      });
-    });
+        env: process.env,
+        expectJsonResponse: true,
+        enableLogging: true
+      }, this.logger);
+
+      return {
+        success: result.success,
+        summary: result.jsonResponse,
+        stdout: result.stdout,
+        stderr: result.stderr
+      };
+    } catch (error) {
+      this.logger.error(`시더 실행 실패: ${error.message}`);
+      return { success: false, error: error.message };
+    }
   }
   
 

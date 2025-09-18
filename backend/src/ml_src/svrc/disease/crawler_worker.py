@@ -361,6 +361,8 @@ class DAO:
 # -----------------------
 # 페처: Wikipedia / AMC
 # -----------------------
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 class WikiFetcher:
     API = 'https://ko.wikipedia.org/w/api.php'
     def __init__(self):
@@ -368,16 +370,22 @@ class WikiFetcher:
         # WIKI 요청 헤더 설정: UA/수락 헤더(WIKI의 봇 정책 준수: 서비스/연락처 명시)
         self.session = requests.Session()
         self.session.headers.update({
-            "User-Agent": "YAME-WikiCrawler/1.0 (+dev.disease.recommend.medicine.service.thankyou; contact: nyd6849@gmail.com)",
+            "User-Agent": "YAME-WikiCrawler/1.0 (+https://github.com/NamYounDong/YAME_NEXT_NEST_JS; contact: nyd6849@gmail.com)",
             "Accept": "application/json",
             "Accept-Language": "ko-KR,ko;q=0.9,en;q=0.8",
         })
-
+        retry = Retry(
+            total=5,                # 총 재시도 횟수
+            backoff_factor=0.8,     # 지수 백오프 (0.8, 1.6, 3.2, …)
+            status_forcelist=[429, 502, 503, 504],
+            allowed_methods=["GET"] # urllib3>=1.26
+        )
+        self.session.mount("https://", HTTPAdapter(max_retries=retry))
+        
     def fetch_title(self, title: str) -> Dict:
-        # 레이트리밋
         self.rl.wait()
-        # 백오프 리트라이 루프
         for attempt in range(MAX_RETRIES):
+            time.sleep(0.2)
             try:
                 params = {
                     'action': 'parse',
@@ -386,30 +394,37 @@ class WikiFetcher:
                     'format': 'json',
                     'formatversion': 2
                 }
-                res = requests.get(self.API, params=params, timeout=HTTP_TIMEOUT)
+                # ✅ 세션을 사용해야 UA/Retry가 적용됩니다.
+                res = self.session.get(self.API, params=params, timeout=HTTP_TIMEOUT)
+
+                if res.status_code == 403:
+                    # 어떤 UA/헤더가 실제로 전송됐는지 찍어서 진단
+                    logger.error("403 Forbidden. sent UA=%r url=%s", 
+                                self.session.headers.get("User-Agent"), res.url)
+                    # 백오프 후 재시도
+                    backoff_sleep(attempt)
+                    continue
+
                 if res.status_code >= 500 or res.status_code == 429:
                     backoff_sleep(attempt)
                     continue
+
                 res.raise_for_status()
                 data = res.json()
                 if 'error' in data:
                     raise RuntimeError(str(data['error']))
+
                 parsed = data['parse']
                 html = parsed['text']
                 wikitext = parsed.get('wikitext')
                 revid = parsed.get('revid', 0)
-                # pageid는 parse 응답에 없을 수 있어 별도 쿼리 필요하지만 생략 가능(0으로)
                 pageid = 0
                 url = f"https://ko.wikipedia.org/wiki/{quote(title.replace(' ', '_'))}"
-                
-                
-                # 해시(HTML 기준)
+
                 h = sha1_hex(html)
-                # 섹션 파싱
                 sections = parse_sections_from_html(html)
-                
+
                 logger.info(f"Wikipedia 페이지 수집 시작 \n 제목: {title} \n URL: {url} \n 섹션 수: {len(sections)}, 해시: {h[:16]}")
-                
                 result = dict(
                     SOURCE='WIKIPEDIA', LANG='ko', PAGE_ID=pageid, REV_ID=revid,
                     TITLE=title, URL=url, CATEGORY_PATH=None,
@@ -418,10 +433,13 @@ class WikiFetcher:
                 )
                 logger.info(f"Wikipedia 페이지 수집 완료 - 제목: {title}, 섹션 수: {len(sections)}, 해시: {h[:16]}")
                 return result
+
             except Exception as e:
-                if attempt+1 >= MAX_RETRIES:
+                if attempt + 1 >= MAX_RETRIES:
                     raise
                 backoff_sleep(attempt)
+                
+                
 
 class AmcFetcher:
     def __init__(self):
