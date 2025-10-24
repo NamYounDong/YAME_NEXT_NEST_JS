@@ -38,7 +38,6 @@ import { EmergencyBaseService } from './emergency-base.service';      // 응급�
 import { TraumaBaseService } from './trauma-base.service';            // 외상센터 정보 수집
 import { DurIngredientService } from './dur-ingredient.service';      // DUR 성분 정보 수집
 import { DurItemService } from './dur-item.service';                  // DUR 품목 정보 수집
-import { DiseaseCrawlerService } from './disease-crawler.service';  // 질병 정보 크롤링 서비스
 
 // 데이터 수집 결과를 위한 인터페이스 타입 정의
 import { CollectionResult } from '../interfaces/data-collection.interface';
@@ -70,8 +69,7 @@ export class DataCollectorService {
     private emergencyBaseService: EmergencyBaseService,    // 응급의료기관 수집 서비스
     private traumaBaseService: TraumaBaseService,          // 외상센터 수집 서비스
     private durIngredientService: DurIngredientService,    // DUR 성분 수집 서비스
-    private durItemService: DurItemService,                // DUR 품목 수집 서비스
-    private diseaseCrawlerService: DiseaseCrawlerService,  // 질병 정보 크롤링 서비스
+    private durItemService: DurItemService                 // DUR 품목 수집 서비스
   ) {}
 
   /**
@@ -291,55 +289,6 @@ export class DataCollectorService {
 
 
 
-
-
-  
-
-  // 큐 등록(멱등): SOURCE + URL_OR_TITLE 유니크
-  async enqueue(source: 'AMC'|'WIKIPEDIA', urlOrTitle: string, priority = 5) {
-    return this.diseaseCrawlerService.enqueue(source, urlOrTitle, priority);
-  }
-  
-  
-  // 큐 상태 요약
-  async queueStats() {
-    return this.diseaseCrawlerService.queueStats();
-  }
-  
-  
-  // 최근 ETL 실행 로그
-  async recentRuns(limit = 20) {
-    return this.diseaseCrawlerService.recentRuns(limit);
-  }
-  
-  
-  // Python 워커 실행 — once/loop 모드
-  runWorker(mode: 'once'|'loop'='once', maxItems = 10, source?: 'AMC'|'WIKIPEDIA'|'ANY') {
-    return this.diseaseCrawlerService.runWorker(mode, maxItems, source);
-  }
-
-
-
-  // Wikipedia 카테고리 시딩 잡 생성
-  async createWikiCategorySeed(category: string, depthLimit = 2, includeSubcats = true, rps = 0.5) {
-    return this.diseaseCrawlerService.createWikiCategorySeed(category, depthLimit, includeSubcats, rps);
-  }
-  
-  // AMC 인덱스 시딩 잡 생성 — 최소 입력: ROOT_URL만 주면 동작
-  async createAmcIndexSeed(
-    seed: { rootUrl: string; paginationMode: 'QUERY_PARAM'|'LINK_NEXT'|'CSS_SELECTOR'; queryParamName: string; startPage: number; cssNextSelector: string; rps: number }) {
-    return this.diseaseCrawlerService.createAmcIndexSeed(seed);
-  }
-
-  // 시딩 워커 실행(공용) — timeBudget/maxApiCalls 소진 시 PAUSED로 저장 후 종료
-  async runSeeder(type: 'WIKI'|'AMC', seedId: number, timeBudgetSec = 3600, maxApiCalls = 5000) {
-    return this.diseaseCrawlerService.runSeeder(type, seedId, timeBudgetSec, maxApiCalls);
-  }
-  
-  // 상태 조회(공용)
-  async seedStatus(type: 'WIKI'|'AMC', seedId: number) {
-    return this.diseaseCrawlerService.seedStatus(type, seedId);
-  }
 
 
   

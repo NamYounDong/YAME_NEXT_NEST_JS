@@ -2,23 +2,26 @@
 
 NestJS 기반의 의료 평가 시스템 백엔드 API
 
-> 🚀 **2024.12 구조 리팩토링 완료**: 기능 중심의 디렉터리 구조로 전면 개편하여 유지보수성과 확장성을 대폭 향상시켰습니다.
+> 🚀 **2024.12 구조 리팩토링 완료**: 기능 중심의 디렉터리 구조로 전면 개편하여 유지보수성과 확장성을 대폭 향상
 > 🔄 **2024.12 데이터 수집 시스템 완성**: HIRA, E-Gen, DUR API 연동 및 자동 스케줄링 시스템 구축 완료
 > 📊 **2024.12 camelCase 변환 시스템**: 데이터베이스 조회 결과 자동 camelCase 변환으로 일관성 확보
 > 🔑 **2024.12 API 키 보안 강화**: decodeURIComponent 적용으로 API 키 안전성 향상
 > 🏗️ **2024.12 인터페이스 구조 개선**: DUR 관련 인터페이스 공통화 및 상속 구조로 리팩토링
-> 🌐 **2024.12 API 방식 개선**: GET 방식으로 변경하여 브라우저에서 직접 호출 가능
-> 📝 **2024.12 로깅 강화**: API 호출 시 FULL URL 로깅으로 디버깅 용이성 향상
+> 🤖 **2024.12 LLM RAG 시스템 도입**: ML 기반에서 GPT-4o + DUR 데이터 기반 RAG로 전환하여 정확도 및 유연성 대폭 향상
+> 🔍 **2025.01 상세 로깅 시스템 구축**: LLM 프롬프트, SQL 쿼리, 검색 결과 등 모든 프로세스 실시간 모니터링 가능
 
 ## 🚀 구현된 주요 기능
 
 ### 🎯 야메 처방 (핵심 기능)
-- ✅ **AI 증상 분석**: ML 기반 질병 예측 및 추천 시스템
-- ✅ **DUR 체크**: 의약품 금기사항 및 상호작용 검증
-- ✅ **위치 기반 추천**: GPS 기반 주변 병원/약국 추천
-- ✅ **피드백 시스템**: 사용자 만족도 수집 및 분석
-- ✅ **병원 접수 토큰**: 병원 포털 연계를 위한 일회용 토큰
-- ✅ **실시간 의료기관 정보**: 외부 API 연동으로 최신 정보 제공
+- ✅ **LLM 기반 증상 분석**: GPT-4o를 활용한 자연어 증상 이해 및 의학 용어 변환
+- ✅ **RAG 기반 약품 추천**: DUR 데이터를 활용한 검색 증강 생성으로 안전한 OTC 약품 추천
+- ✅ **DUR 체크**: 임신부, 고령자, 연령별 금기사항 자동 검증
+- ✅ **심각도 판단**: LLM이 증상의 심각도를 평가하여 병원 안내 여부 결정 (1-10점)
+- ✅ **위치 기반 추천**: GPS 기반 주변 병원/약국 추천 (운영시간 고려, 거리순 정렬)
+- ✅ **VWorld 지도 연동**: 위치 정보를 지도와 주소로 표시 (주소 복사 기능)
+- ✅ **증상 로그 저장**: 통계 및 전염병 추적을 위한 데이터 수집 (GPS 위치 포함)
+- ✅ **OpenAI API 연동**: GPT-4o 모델 활용
+- ✅ **상세 로깅**: 모든 LLM 호출, SQL 쿼리, 검색 결과 실시간 로깅
 
 ### 🔄 데이터 수집 시스템
 - ✅ **HIRA 병원 정보**: 건보공단 병원 기본정보 수집 (3000개씩 배치)
@@ -30,10 +33,11 @@ NestJS 기반의 의료 평가 시스템 백엔드 API
 - ✅ **자동 스케줄링**: 일/주/3분 단위 자동 데이터 수집
 
 ### 🔄 외부 API 연동
+- ✅ **OpenAI API**: GPT-4o 모델을 통한 증상 분석 및 약품 추천
 - ✅ **HIRA API**: 건보공단 병원/약국 정보 수집
 - ✅ **E-Gen API**: 응급의료기관 기본정보, 외상센터 기본정보 수집
 - ✅ **MFDS DUR API**: 식약처 의약품 금기사항 정보 (성분/품목 기반)
-- ✅ **공공데이터포털**: 각종 의료기관 데이터 연동
+- ✅ **VWorld API**: 위치 기반 지도 및 주소 정보 제공
 - ✅ **스케줄 기반 수집**: 정기적인 데이터 갱신 (일/주/3분 단위)
 
 ### 🗄️ 데이터베이스 & 캐시
@@ -55,7 +59,7 @@ NestJS 기반의 의료 평가 시스템 백엔드 API
 ### 📊 API 기능
 - ✅ **사용자 관리**: CRUD 작업 (MariaDB 기반)
 - ✅ **건강 평가**: 의료 설문 및 평가 관리
-- ✅ **증상 로그**: 증상 분석 이력 관리
+- ✅ **증상 로그**: LLM 기반 증상 분석 이력 관리
 - ✅ **JSON 데이터 처리**: 설문/응답 데이터 저장
 - ✅ **관계형 데이터**: 환자-의사 연결
 - ✅ **Swagger 문서**: 자동 생성된 API 문서
@@ -65,17 +69,20 @@ NestJS 기반의 의료 평가 시스템 백엔드 API
 - ✅ **TypeScript**: 타입 안전성
 - ✅ **Validation**: class-validator로 입력 검증
 - ✅ **Error Handling**: 체계적인 예외 처리
-- ✅ **Logging**: 구조화된 로그 시스템
+- ✅ **Logging**: 구조화된 로그 시스템 (LLM, SQL, 검색 결과 전부 로깅)
+- ✅ **Debugging**: 상세한 디버깅 정보 출력 (프롬프트, 응답, 쿼리)
 
 ## 기술 스택
 
 - **Framework**: NestJS
 - **Database**: MariaDB (Native Driver)
 - **Cache/Session**: Redis
+- **AI/ML**: OpenAI GPT-4o (RAG)
 - **Authentication**: Session-based + JWT (호환)
 - **Validation**: class-validator, class-transformer
 - **Documentation**: Swagger/OpenAPI
 - **Testing**: Jest
+- **External APIs**: HIRA, E-Gen, MFDS DUR, VWorld
 
 ## 설치 및 실행
 
@@ -84,6 +91,7 @@ NestJS 기반의 의료 평가 시스템 백엔드 API
 - MariaDB 10.5+
 - Redis 6.0+
 - npm
+- OpenAI API Key
 
 ### 설치
 ```bash
@@ -91,7 +99,7 @@ npm install
 ```
 
 ### 환경 변수 설정
-`.env` 파일을 생성하고 다음과 같이 설정 (`config/env.example` 참고):
+`.env` 파일을 생성하고 다음과 같이 설정:
 
 ```env
 # 마리아DB 연결 정보
@@ -106,6 +114,22 @@ REDIS_HOST=localhost
 REDIS_PORT=6379
 REDIS_PASSWORD=
 REDIS_DB=0
+
+# OpenAI API
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# VWorld API
+VWORLD_API_KEY=your-vworld-api-key
+VWORLD_API_URL=https://api.vworld.kr
+
+# HIRA API (건보공단)
+HIRA_API_KEY=your-hira-api-key
+
+# E-Gen API (응급의료)
+EGEN_API_KEY=your-egen-api-key
+
+# MFDS DUR API (식약처)
+DUR_API_KEY=your-dur-api-key
 
 # JWT (기존 시스템과의 호환성을 위해 유지)
 JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
@@ -123,7 +147,24 @@ PORT=3001
 ### 데이터베이스 설정
 MariaDB에 접속하여 스키마를 생성:
 ```bash
-mysql -u root -p < database/schema.sql
+mysql -u root -p < yame_create_tables.sql
+```
+
+#### LLM RAG 관련 테이블 수정 (필수)
+```sql
+-- SYMPTOM_LOGS 테이블에 LLM 관련 컬럼 추가
+ALTER TABLE SYMPTOM_LOGS
+  ADD COLUMN IF NOT EXISTS MEDICAL_TERMS TEXT NULL COMMENT 'LLM이 변환한 의학 용어들 (JSON 배열)',
+  ADD COLUMN IF NOT EXISTS SUSPECTED_DISEASES JSON NULL COMMENT 'LLM이 추론한 의심 질병 목록 (JSON 배열)',
+  ADD COLUMN IF NOT EXISTS LLM_ANALYSIS TEXT NULL COMMENT 'LLM의 전체 분석 내용',
+  ADD COLUMN IF NOT EXISTS SEVERITY_SCORE INT NULL COMMENT '심각도 점수 (1-10, 높을수록 심각)',
+  ADD COLUMN IF NOT EXISTS RECOMMENDED_DRUGS JSON NULL COMMENT '추천 약품 목록 (JSON 배열)',
+  ADD COLUMN IF NOT EXISTS NEARBY_PHARMACIES JSON NULL COMMENT '주변 약국 정보 (JSON)',
+  ADD COLUMN IF NOT EXISTS NEARBY_HOSPITALS JSON NULL COMMENT '주변 병원 정보 (JSON)',
+  MODIFY COLUMN ITEM_SEQ VARCHAR(20) NULL COMMENT '품목 기준코드(DUR)',
+  MODIFY COLUMN PREDICTED_DISEASE VARCHAR(500) NULL COMMENT 'LLM이 추정한 질병명';
+
+CREATE INDEX IF NOT EXISTS IDX_LOGS_SEVERITY ON SYMPTOM_LOGS (SEVERITY_SCORE, CREATED_AT);
 ```
 
 ### 실행
@@ -143,41 +184,134 @@ npm run start:prod
 서버 실행 후 다음 URL에서 Swagger API 문서를 확인할 수 있습니다:
 - http://localhost:3001/api
 
-## 🔐 인증 시스템
+## 🤖 LLM RAG 증상 분석 워크플로우
 
-### 세션 기반 인증 (메인)
-FastAPI와 동일한 로직으로 구현된 세션 인증:
+### 1. 증상 입력 및 분석 (SymptomAnalysisService)
+사용자가 자연어로 증상을 입력하면, GPT-4o가 다음을 수행합니다:
+- 증상을 의학 용어로 변환 (예: "미열" → "low-grade fever")
+- 가능한 질병 추론 및 확률 계산 (예: 감기 85%, 독감 60%)
+- 심각도 점수 산정 (1-10, 높을수록 심각)
+- **로깅**: 프롬프트, GPT-4o 응답, 파싱 결과 모두 기록
+
+### 2. DUR 기반 약품 추천 (DrugRecommendationService)
+- LLM이 추출한 의학 용어로 DUR 데이터베이스에서 OTC 약품 검색
+- **로깅**: 검색 키워드, SQL 쿼리, 검색 결과 개수, 실제 약품 목록
+- 검색 결과가 없을 경우 디버깅 힌트 제공:
+  - ITEM_DUR_INFO 테이블 데이터 확인
+  - ETC_OTC_CODE = '02' 조건 확인
+  - 한글/영문 키워드 매칭 확인
+- 검색된 약품을 LLM에 전달하여 최적의 약품 선택
+- 사용자 정보(나이, 임신 여부 등)를 기반으로 DUR 금기사항 체크
+- **로깅**: DUR 경고 사항, 추천 이유
+
+### 3. 심각도 기반 안내
+- **경증 (1-6점)**: OTC 약품 추천 및 주변 약국 안내
+- **중등도 (7점)**: 약품 추천과 함께 병원 방문 권고
+- **중증 (8-10점)**: 즉시 병원 방문 안내 (약품 추천 없음)
+
+### 4. 위치 기반 시설 검색 (FacilitySearchService)
+- GPS 좌표를 기반으로 주변 병원/약국 검색 (MariaDB SPATIAL INDEX 활용)
+- 현재 시간 기준 운영 중인 시설만 필터링 (moment-timezone 사용)
+- 거리순 정렬하여 제공 (기본 3km 반경, 최대 10개)
+- **로깅**: 검색 좌표, 반경, 필터링 결과
+
+### 5. 지도 및 주소 제공 (VWorldService)
+- VWorld API를 통해 좌표를 주소로 변환
+- 지도 표시 및 주소 복사 기능 제공
+- **로깅**: API 호출 정보, 변환 결과
+
+### 6. 로그 저장
+모든 분석 결과를 SYMPTOM_LOGS 테이블에 저장:
+- 원본 증상 텍스트 (SYMPTOM_TEXT)
+- 변환된 의학 용어 (MEDICAL_TERMS, JSON)
+- 추론된 질병 목록 (SUSPECTED_DISEASES, JSON)
+- LLM 분석 내용 (LLM_ANALYSIS)
+- 심각도 점수 (SEVERITY_SCORE)
+- 추천 약품 (RECOMMENDED_DRUGS, JSON)
+- GPS 위치 정보 (LATITUDE, LONGITUDE, GPS_ACCURACY_M)
+- 주변 시설 정보 (NEARBY_PHARMACIES, NEARBY_HOSPITALS, JSON)
+
+### 서비스 구조
 
 ```typescript
-// 세션에서 사용자 정보 추출
-async getUserFromSession(sessionId: string) {
-  const realId = this.decodeSpringSessionId(sessionId);
-  const redisKey = `spring:session:sessions:${realId}`;
-  const userData = await this.redis.hget(redisKey, 'sessionAttr:USER');
-  return JSON.parse(userData);
-}
+// 증상 분석 서비스
+OpenAIService
+  └─ chat(prompt): GPT-4o API 호출
+
+SymptomAnalysisService
+  ├─ analyzeSymptoms(): 증상 분석 총괄
+  ├─ convertToMedicalTerms(): 의학 용어 변환
+  ├─ inferDiseases(): 질병 추론
+  └─ saveSymptomLog(): 로그 저장
+
+DrugRecommendationService
+  ├─ recommendDrugs(): 약품 추천
+  ├─ getOTCDrugs(): DUR에서 OTC 약품 조회
+  ├─ checkDURContraindications(): 금기사항 체크
+  ├─ checkPregnancyContraindications(): 임신부 금기
+  └─ checkElderlyContraindications(): 고령자 금기
+
+FacilitySearchService
+  ├─ searchNearbyPharmacies(): 주변 약국 검색
+  ├─ searchNearbyHospitals(): 주변 병원 검색
+  └─ isOperatingNow(): 운영시간 체크
+
+VWorldService
+  ├─ getAddressFromCoords(): 좌표 → 주소
+  └─ getCoordsFromAddress(): 주소 → 좌표
 ```
-
-#### 세션 ID 추출 방식
-- **쿠키**: `SESSION`, `JSESSIONID`
-- **헤더**: `x-session-id`
-
-#### Spring Session 호환
-- 키 패턴: `spring:session:sessions:{sessionId}`
-- 사용자 데이터: `sessionAttr:USER`
-- JSON 파싱: GenericJackson2JsonRedisSerializer 호환
-
-### JWT 인증 (호환성)
-기존 시스템과의 호환성을 위해 JWT 인증도 지원
 
 ## 📊 주요 엔드포인트
 
-### 🎯 야메 처방 (증상 분석) - 핵심 기능
-- `POST /symptom-logs/analyze` - AI 증상 분석 및 추천
-- `POST /symptom-logs/feedback` - 추천 결과 피드백 제출
-- `GET /symptom-logs/feedback/stats` - 피드백 통계 조회
-- `POST /symptom-logs/intake-token/:token` - 병원 접수 토큰 사용
-- `GET /symptom-logs/tokens/stats` - 토큰 사용 통계
+### 🤖 LLM 증상 분석
+- `POST /api/symptom-logs/analyze` - LLM 기반 증상 분석 및 약품 추천
+
+**요청 본문:**
+```json
+{
+  "symptomText": "머리가 아프고 열이 나요",
+  "subSymptoms": ["기침", "코막힘"],
+  "latitude": 37.5665,
+  "longitude": 126.9780,
+  "gpsAccuracy": 10,
+  "userAge": 35,
+  "isPregnant": false
+}
+```
+
+**응답 예시:**
+```json
+{
+  "logId": 123,
+  "medicalTerms": ["두통", "발열", "기침", "비충혈"],
+  "suspectedDiseases": [
+    { "disease": "감기", "confidence": 0.85 },
+    { "disease": "독감", "confidence": 0.60 }
+  ],
+  "severityScore": 4,
+  "severityLevel": "mild",
+  "analysis": "증상으로 보아 일반적인 감기로 추정됩니다...",
+  "recommendedDrugs": [
+    {
+      "itemSeq": "200001234",
+      "itemName": "타이레놀정",
+      "entpName": "한국존슨앤드존슨",
+      "classNo": "[111]해열진통소염제",
+      "reason": "두통과 발열 완화에 효과적"
+    }
+  ],
+  "nearbyPharmacies": [
+    {
+      "name": "서울약국",
+      "address": "서울시 종로구...",
+      "distance": 0.5,
+      "phone": "02-1234-5678",
+      "isOpen": true
+    }
+  ],
+  "guidanceMessage": "일반 의약품으로 증상 완화가 가능합니다. 가까운 약국을 방문하세요."
+}
+```
 
 ### 👥 사용자 관리 (세션 인증)
 - `GET /users` - 사용자 목록 조회
@@ -203,257 +337,12 @@ async getUserFromSession(sessionId: string) {
 - `GET /data-collector/collect-trauma` - 외상센터 데이터 수집
 - `GET /data-collector/collect-dur-ingredient` - DUR 성분 데이터 수집
 - `GET /data-collector/collect-dur-item` - DUR 품목 데이터 수집
-- `GET /data-collector/collect-dur-all` - DUR 전체 데이터 수집 (성분 + 품목)
-- `GET /data-collector/collect-hospital` - 병원 데이터 수집 (HIRA 병원)
-- `GET /data-collector/collect-pharmacy` - 약국 데이터 수집 (HIRA 약국)
 - `GET /data-collector/status` - 수집 상태 조회
-
-### 🏥 외부 API 연동
-- **HIRA API**: 건보공단 병원/약국 정보 (3000개씩 배치 처리)
-- **E-Gen API**: 응급의료기관 기본정보, 외상센터 기본정보 (3000개씩 배치 처리)
-- **MFDS DUR API**: 의약품 금기사항 정보 (성분/품목 기반, 100개씩 배치 처리)
-- **공공데이터포털**: 각종 의료기관 정보
 
 ### 🛠️ 시스템 관리
 - `GET /` - API 정보
 - `GET /health` - 헬스 체크
 - `GET /api` - Swagger API 문서
-
-## 🗄️ 데이터베이스 스키마
-
-### Users 테이블
-```sql
-CREATE TABLE users (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  name VARCHAR(255) NOT NULL,
-  email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
-  role ENUM('patient', 'doctor', 'admin') DEFAULT 'patient',
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-```
-
-### Assessments 테이블
-```sql
-CREATE TABLE assessments (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  type ENUM('general', 'cardiac', 'neurological', 'respiratory', 'psychological'),
-  status ENUM('pending', 'in_progress', 'completed', 'reviewed'),
-  questionnaire JSON,
-  responses JSON,
-  results TEXT,
-  doctorNotes TEXT,
-  patientId INT NOT NULL,
-  doctorId INT,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (patientId) REFERENCES users(id),
-  FOREIGN KEY (doctorId) REFERENCES users(id)
-);
-```
-
-## 🛡️ 보안 기능
-
-### 데이터베이스 보안
-- **SQL 인젝션 방지**: Prepared Statement 사용
-- **연결 암호화**: TLS/SSL 지원
-- **권한 분리**: 최소 권한 원칙
-
-### 세션 보안
-- **세션 만료**: Redis TTL 기반
-- **세션 검증**: 각 요청마다 유효성 확인
-- **크로스 도메인**: CORS 설정
-
-### 입력 검증
-- **class-validator**: DTO 레벨 검증
-- **타입 검증**: TypeScript 타입 시스템
-- **SQL 파라미터**: 바인딩 파라미터 사용
-
-## 🔧 개발 가이드
-
-### 새로운 기능 추가 가이드 (리팩토링된 구조)
-
-새로운 기능적 구조에서 API 기능을 추가하는 방법:
-
-#### 1. **📋 DTO 정의** (`interfaces/`)
-```typescript
-// interfaces/create-example.dto.ts
-import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional } from 'class-validator';
-
-export class CreateExampleDto {
-  @ApiProperty({ example: 'Example Name' })
-  @IsNotEmpty()
-  name: string;
-
-  @ApiProperty({ example: 'Example Description' })
-  @IsOptional()
-  description?: string;
-}
-```
-
-#### 2. **🗄️ Entity 모델 정의** (`models/`)
-```typescript
-// models/example.entity.ts
-export interface Example {
-  id: number;
-  name: string;
-  description?: string;
-  created_at: Date;
-  updated_at: Date;
-}
-```
-
-#### 3. **🔧 Service 구현** (`services/`)
-```typescript
-// services/example.service.ts
-import { Injectable } from '@nestjs/common';
-import { DatabaseService } from './database.service';
-import { CreateExampleDto } from '../interfaces/create-example.dto';
-import { Example } from '../models/example.entity';
-
-@Injectable()
-export class ExampleService {
-  constructor(private databaseService: DatabaseService) {}
-  
-  async findAll(): Promise<Example[]> {
-    const sql = 'SELECT * FROM examples WHERE active = ?';
-    return this.databaseService.query(sql, [true]);
-  }
-
-  async create(createDto: CreateExampleDto): Promise<Example> {
-    const sql = 'INSERT INTO examples (name, description) VALUES (?, ?)';
-    const result = await this.databaseService.query(sql, [
-      createDto.name, 
-      createDto.description
-    ]);
-    return this.findById(result.insertId);
-  }
-}
-```
-
-#### 4. **🎯 Controller 구현** (`controllers/`)
-```typescript
-// controllers/example.controller.ts
-import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
-import { ExampleService } from '../services/example.service';
-import { CreateExampleDto } from '../interfaces/create-example.dto';
-import { SessionAuthGuard } from '../guards/session-auth.guard';
-import { SessionUser } from '../decorators/session-user.decorator';
-
-@ApiTags('Examples')
-@Controller('examples')
-@UseGuards(SessionAuthGuard)
-@ApiSecurity('session')
-export class ExampleController {
-  constructor(private exampleService: ExampleService) {}
-
-  @Get()
-  @ApiOperation({ summary: 'Get all examples' })
-  findAll(@SessionUser() user: any) {
-    return this.exampleService.findAll();
-  }
-
-  @Post()
-  @ApiOperation({ summary: 'Create new example' })
-  create(@Body() createDto: CreateExampleDto) {
-    return this.exampleService.create(createDto);
-  }
-}
-```
-
-#### 5. **⚙️ Module 설정** (`config/`)
-```typescript
-// config/example.module.ts
-import { Module } from '@nestjs/common';
-import { ExampleService } from '../services/example.service';
-import { ExampleController } from '../controllers/example.controller';
-import { SessionModule } from './session.module';
-
-@Module({
-  imports: [SessionModule],
-  controllers: [ExampleController],
-  providers: [ExampleService],
-  exports: [ExampleService],
-})
-export class ExampleModule {}
-```
-
-#### 6. **🏠 Root Module 등록** (`app.module.ts`)
-```typescript
-// app.module.ts에 새 모듈 추가
-import { ExampleModule } from './config/example.module';
-
-@Module({
-  imports: [
-    // ... 기존 모듈들
-    ExampleModule, // 추가
-  ],
-})
-export class AppModule {}
-```
-
-### 세션 인증 사용법
-
-```typescript
-// 가드 적용
-@UseGuards(SessionAuthGuard)
-
-// 사용자 정보 접근
-@Get('profile')
-getProfile(@SessionUser() user: any) {
-  return {
-    id: user.id,
-    name: user.name,
-    role: user.role
-  };
-}
-
-// 특정 사용자 속성만 추출
-@Get('name')
-getName(@SessionUser('name') userName: string) {
-  return { name: userName };
-}
-```
-
-### MariaDB 쿼리 작성
-
-```typescript
-// 단순 조회
-const users = await this.databaseService.query(
-  'SELECT * FROM users WHERE role = ?',
-  ['patient']
-);
-
-// 복잡한 조인
-const assessments = await this.databaseService.query(`
-  SELECT 
-    a.*,
-    p.name as patient_name,
-    d.name as doctor_name
-  FROM assessments a
-  LEFT JOIN users p ON a.patientId = p.id
-  LEFT JOIN users d ON a.doctorId = d.id
-  WHERE a.status = ?
-`, ['completed']);
-
-// 트랜잭션 (필요시)
-const conn = await this.databaseService.getConnection();
-try {
-  await conn.beginTransaction();
-  // 여러 쿼리 실행
-  await conn.commit();
-} catch (error) {
-  await conn.rollback();
-  throw error;
-} finally {
-  conn.release();
-}
-```
 
 ## 🧪 테스트
 
@@ -468,14 +357,42 @@ npm run test:cov
 npm run test:e2e
 
 # 특정 파일 테스트
-npm run test -- users.service.spec.ts
+npm run test -- symptom-analysis.service.spec.ts
+```
+
+### API 테스트 (test-symptom-analysis.http)
+```http
+### 증상 분석 테스트
+POST http://localhost:3001/api/symptom-logs/analyze
+Content-Type: application/json
+
+{
+  "symptomText": "머리가 아프고 열이 나요",
+  "subSymptoms": ["기침", "코막힘"],
+  "latitude": 37.5665,
+  "longitude": 126.9780,
+  "gpsAccuracy": 10,
+  "userAge": 35,
+  "isPregnant": false
+}
+```
+
+### 로그 모니터링
+증상 분석 실행 시 다음 로그를 확인할 수 있습니다:
+```
+[SymptomAnalysis] 증상 분석 시작: 머리가 아프고 열이 나요
+[OpenAI] 증상 분석 프롬프트: ...
+[OpenAI] GPT-4o 응답: {"medicalTerms": [...], ...}
+[OpenAI] 파싱된 결과: ...
+[DrugRecommendation] 검색 키워드: headache, fever
+[DrugRecommendation] 실행 SQL: SELECT ... FROM ITEM_DUR_INFO ...
+[DrugRecommendation] 검색 결과: 15개 약품 발견
+[DrugRecommendation] 처음 5개 약품: ...
 ```
 
 ## 📁 프로젝트 구조
 
 ### 🏗️ 기능적 구조 (2024.12 리팩토링)
-
-새로운 기능 중심의 디렉터리 구조로 리팩토링되어 유지보수성과 확장성이 크게 향상되었습니다.
 
 ```
 src/
@@ -486,7 +403,7 @@ src/
 │   ├── app.controller.ts               # 메인 API 엔드포인트
 │   ├── assessments.controller.ts       # 의료 평가 API
 │   ├── data-collector.controller.ts    # 데이터 수집 관리 API
-│   ├── symptom-logs.controller.ts      # 증상 분석 API (야메 처방)
+│   ├── symptom-logs.controller.ts      # LLM 증상 분석 API ⭐ NEW
 │   └── users.controller.ts             # 사용자 관리 API
 │
 ├── 📁 services/                        # 🔧 비즈니스 로직 서비스
@@ -494,45 +411,33 @@ src/
 │   ├── assessments.service.ts          # 의료 평가 비즈니스 로직
 │   ├── data-collector.service.ts       # 데이터 수집 스케줄링
 │   ├── database.service.ts             # 데이터베이스 연결
-│   ├── emergency-base.service.ts       # 응급의료기관 데이터 수집
-│   ├── feedback.service.ts             # 피드백 관리
-│   ├── hira-hospital.service.ts        # HIRA 병원 데이터 수집
-│   ├── hira-pharmacy.service.ts        # HIRA 약국 데이터 수집
-│   ├── intake-tokens.service.ts        # 병원 접수 토큰
 │   ├── redis.service.ts               # Redis 캐시 관리
 │   ├── session.service.ts             # 세션 관리
-│   ├── symptom-logs.service.ts        # 증상 분석 워크플로우
-│   ├── trauma-base.service.ts          # 외상센터 데이터 수집
-│   ├── dur-ingredient.service.ts       # DUR 성분 데이터 수집
-│   ├── dur-item.service.ts             # DUR 품목 데이터 수집
-│   └── users.service.ts               # 사용자 관리
+│   ├── users.service.ts               # 사용자 관리
+│   ├── openai.service.ts              # OpenAI GPT-4o API ⭐ NEW
+│   ├── symptom-analysis.service.ts    # LLM 증상 분석 ⭐ NEW
+│   ├── drug-recommendation.service.ts # DUR 기반 약품 추천 ⭐ NEW
+│   ├── facility-search.service.ts     # 위치 기반 시설 검색 ⭐ NEW
+│   ├── vworld.service.ts              # VWorld 지도 API ⭐ NEW
+│   ├── hira-hospital.service.ts       # HIRA 병원 데이터 수집
+│   ├── hira-pharmacy.service.ts       # HIRA 약국 데이터 수집
+│   ├── emergency-base.service.ts      # 응급의료기관 데이터 수집
+│   ├── trauma-base.service.ts         # 외상센터 데이터 수집
+│   ├── dur-ingredient.service.ts      # DUR 성분 데이터 수집
+│   └── dur-item.service.ts            # DUR 품목 데이터 수집
 │
 ├── 📁 models/                          # 🗄️ 데이터베이스 엔티티
 │   ├── assessment.entity.ts           # 의료 평가 모델
-│   ├── feedback.entity.ts            # 피드백 모델
-│   ├── intake-token.entity.ts        # 접수 토큰 모델
 │   ├── symptom-log.entity.ts         # 증상 로그 모델
 │   └── user.entity.ts               # 사용자 모델
 │
 ├── 📁 interfaces/                      # 📋 DTO 및 인터페이스
 │   ├── create-assessment.dto.ts       # 평가 생성 DTO
-│   ├── create-feedback.dto.ts        # 피드백 생성 DTO
-│   ├── create-symptom-log.dto.ts     # 증상 로그 생성 DTO
 │   ├── create-user.dto.ts            # 사용자 생성 DTO
+│   ├── analyze-symptom.dto.ts        # 증상 분석 요청 DTO ⭐ NEW
 │   ├── data-collection.interface.ts  # 데이터 수집 공통 인터페이스
-│   ├── symptom-analysis-result.dto.ts # 분석 결과 DTO
 │   ├── update-assessment.dto.ts      # 평가 수정 DTO
 │   └── update-user.dto.ts           # 사용자 수정 DTO
-│
-├── 📁 utils/                          # 🛠️ 유틸리티 & 헬퍼
-│   ├── api-collector.util.ts         # 공통 API 수집 유틸리티
-│   ├── case-converter.util.ts        # camelCase 변환 유틸리티
-│   ├── dur-check.service.ts          # 의약품 금기사항 체크
-│   ├── geo.service.ts               # 위치 기반 서비스
-│   ├── hira-collector.service.ts    # HIRA API 수집기
-│   ├── hospital-collector.service.ts # 병원 데이터 수집기
-│   ├── ml-prediction.service.ts     # ML 예측 서비스
-│   └── pharmacy-collector.service.ts # 약국 데이터 수집기
 │
 ├── 📁 config/                         # ⚙️ 모듈 설정
 │   ├── assessments.module.ts         # 평가 모듈 설정
@@ -540,7 +445,7 @@ src/
 │   ├── database.module.ts           # 데이터베이스 모듈
 │   ├── redis.module.ts             # Redis 모듈
 │   ├── session.module.ts           # 세션 모듈
-│   ├── symptom-logs.module.ts       # 증상 로그 모듈
+│   ├── symptom-logs.module.ts       # LLM 증상 분석 모듈 ⭐ NEW
 │   └── users.module.ts             # 사용자 모듈
 │
 ├── 📁 guards/                         # 🛡️ 인증 가드
@@ -550,37 +455,9 @@ src/
 ├── 📁 decorators/                     # 🎨 커스텀 데코레이터
 │   └── session-user.decorator.ts    # 세션 사용자 데코레이터
 │
-├── 📁 middlewares/                    # 🔀 미들웨어 (향후 확장)
-└── 📁 constants/                      # 📊 상수 정의 (향후 확장)
+└── 📁 scheduler/                      # ⏰ 스케줄러
+    └── scheduler.module.ts          # 데이터 수집 스케줄링
 ```
-
-### 🚀 구조 변경의 장점
-
-1. **🎯 명확한 책임 분리**: 각 폴더의 역할이 명확하게 구분됨
-2. **🔍 쉬운 탐색**: 찾고자 하는 파일의 위치를 직관적으로 파악 가능
-3. **🧩 모듈화**: 기능별 독립성과 재사용성 향상
-4. **📈 확장성**: 새로운 기능 추가 시 명확한 위치 지정
-5. **👥 팀 협업**: 표준화된 구조로 개발자 간 일관성 확보
-6. **🛠️ 유지보수**: 관련 파일들이 논리적으로 그룹화되어 관리 용이
-7. **🔄 데이터 수집 자동화**: 체계적인 API 데이터 수집 및 스케줄링
-8. **📊 camelCase 변환**: 데이터베이스 조회 결과 자동 camelCase 변환으로 일관성 확보
-9. **🔑 API 키 보안**: decodeURIComponent 적용으로 API 키 안전성 향상
-10. **🏗️ 인터페이스 최적화**: DUR 관련 인터페이스 공통화 및 상속 구조로 코드 중복 제거
-11. **🌐 API 호출 방식**: GET 방식으로 변경하여 브라우저에서 직접 호출 가능
-12. **📝 로깅 시스템**: API 호출 시 FULL URL 로깅으로 디버깅 및 모니터링 용이성 향상
-
-### 📂 폴더별 상세 설명
-
-- **controllers/**: HTTP 요청 처리 및 라우팅 담당
-- **services/**: 핵심 비즈니스 로직 구현
-- **models/**: 데이터베이스 테이블과 매핑되는 엔티티
-- **interfaces/**: API 요청/응답 데이터 구조 정의
-- **utils/**: 재사용 가능한 유틸리티 함수 및 헬퍼
-- **config/**: NestJS 모듈 설정 및 의존성 주입 관리
-- **guards/**: 인증 및 권한 검사 로직
-- **decorators/**: 커스텀 파라미터 데코레이터
-- **middlewares/**: HTTP 요청 전처리 로직 (확장용)
-- **constants/**: 애플리케이션 전역 상수 (확장용)
 
 ## 🚀 성능 최적화
 
@@ -594,34 +471,16 @@ src/
 - **파이프라인**: 여러 명령어 일괄 처리
 - **TTL 관리**: 메모리 사용량 최적화
 
-## 🔍 모니터링 & 로깅
-
-### 로그 시스템
-```typescript
-private readonly logger = new Logger(ClassName);
-
-// 정보 로그
-this.logger.log('사용자 로그인 성공', { userId, email });
-
-// 경고 로그
-this.logger.warn('세션 만료 임박', { sessionId, ttl });
-
-// 에러 로그
-this.logger.error('데이터베이스 연결 실패', error);
-```
-
-### 헬스 체크
-```bash
-# 서비스 상태 확인
-curl http://localhost:3001/health
-
-# 응답 예시
-{
-  "status": "ok",
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "service": "YAME Backend API"
-}
-```
+### LLM API
+- **프롬프트 최적화**: 명확하고 구조화된 프롬프트 작성
+- **에러 핸들링**: API 실패 시 상세한 에러 메시지
+- **상세 로깅**: 
+  - 전체 프롬프트 내용 (입력 증상, 시스템 메시지)
+  - GPT-4o 응답 JSON (전체 내용)
+  - 파싱된 결과 (의학 용어, 질병, 심각도)
+  - SQL 쿼리 및 실행 결과
+  - 검색 키워드 및 파라미터
+  - 디버깅 힌트 (문제 발생 시)
 
 ## 📋 배포 가이드
 
@@ -648,3 +507,7 @@ CMD ["npm", "run", "start:prod"]
 2. **커밋 메시지**: Conventional Commits 규칙
 3. **테스트**: 새 기능 추가 시 테스트 코드 작성
 4. **문서화**: README 업데이트 및 API 문서 작성
+
+## 📝 라이선스
+
+Copyright © 2024 YAME Project

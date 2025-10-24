@@ -252,7 +252,18 @@ export const symptomApi = {
    * 증상 분석 요청
    */
   analyzeSymptom: (symptomData: any) => {
-    return api.post('/api/symptom-logs/analyze', symptomData, {
+    // 프론트엔드 snake_case를 백엔드 camelCase로 변환
+    const backendData = {
+      symptomText: symptomData.symptom_text,
+      subSymptoms: symptomData.sub_symptoms,
+      latitude: symptomData.gps_point?.lat,
+      longitude: symptomData.gps_point?.lng,
+      gpsAccuracy: symptomData.gps_accuracy_m,
+      userAge: symptomData.user_age,
+      isPregnant: symptomData.is_pregnant,
+    };
+    
+    return api.post('/api/symptom-logs/analyze', backendData, {
       loadingMessage: 'AI가 증상을 분석하고 있습니다...',
       timeout: 45000, // 증상 분석은 시간이 오래 걸릴 수 있음
     });

@@ -11,3 +11,4 @@ kiwipiepy
 rapidfuzz
 pymysql
 python-dotenv
+openai

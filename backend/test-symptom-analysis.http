@@ -1,0 +1,66 @@
+### 증상 분석 API 테스트
+### VS Code의 REST Client 확장으로 실행 가능
+
+### 1. 기본 증상 분석 (필수 항목만)
+POST http://localhost:3001/api/symptom-logs/analyze
+Content-Type: application/json
+
+{
+  "symptomText": "머리가 아프고 열이 나요"
+}
+
+### 2. 추가 증상 포함
+POST http://localhost:3001/api/symptom-logs/analyze
+Content-Type: application/json
+
+{
+  "symptomText": "배가 아프고 설사를 해요",
+  "subSymptoms": ["구토", "메스꺼움"]
+}
+
+### 3. 위치 정보 포함
+POST http://localhost:3001/api/symptom-logs/analyze
+Content-Type: application/json
+
+{
+  "symptomText": "기침이 나고 목이 아파요",
+  "subSymptoms": ["콧물", "재채기"],
+  "latitude": 37.5665,
+  "longitude": 126.9780,
+  "gpsAccuracy": 10
+}
+
+### 4. 전체 정보 포함 (DUR 체크용)
+POST http://localhost:3001/api/symptom-logs/analyze
+Content-Type: application/json
+
+{
+  "symptomText": "두통이 있고 열이 나요",
+  "subSymptoms": ["오한", "근육통"],
+  "latitude": 37.5665,
+  "longitude": 126.9780,
+  "gpsAccuracy": 15,
+  "userAge": 35,
+  "isPregnant": false
+}
+
+### 5. 임신부 테스트
+POST http://localhost:3001/api/symptom-logs/analyze
+Content-Type: application/json
+
+{
+  "symptomText": "감기 기운이 있어요",
+  "userAge": 28,
+  "isPregnant": true
+}
+
+### 6. 고령자 테스트
+POST http://localhost:3001/api/symptom-logs/analyze
+Content-Type: application/json
+
+{
+  "symptomText": "소화가 안되고 속이 더부룩해요",
+  "userAge": 75,
+  "isPregnant": false
+}
+

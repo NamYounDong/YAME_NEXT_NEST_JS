@@ -71,8 +71,6 @@ import { HospitalMapper } from '../database/hospital.mapper'; // 병원 데이�
 import { PharmacyMapper } from '../database/pharmacy.mapper'; // 약국 데이터베이스 매퍼
 import { DurIngredientMapper } from '../database/dur-ingredient.mapper'; // DUR 성분 데이터베이스 매퍼
 import { DurItemMapper } from '../database/dur-item.mapper'; // DUR 품목 데이터베이스 매퍼
-import { DataCrawlerMapper } from '../database/data-crawler.mapper'; // 데이터 크롤러 매퍼
-import { DiseaseCrawlerService } from '../services/disease-crawler.service'; // 질병 정보 크롤링 서비스
 
 @Module({
   imports: [
@@ -98,9 +96,6 @@ import { DiseaseCrawlerService } from '../services/disease-crawler.service'; // 
     DurIngredientService, // 성분 기반 DUR 규칙 수집 (병용금기, 연령금기, 임부금기 등)
     DurItemService, // 품목 기반 DUR 규칙 수집 (효능군중복, 서방정분할주의 등)
     
-    // 질병 정보 크롤링 서비스
-    DiseaseCrawlerService, // 질병 정보 웹 크롤링 서비스
-    
     // 공통 유틸리티
     ApiCollectorUtil, // 외부 API 통신, 페이지네이션, 데이터 처리 공통 기능
     
@@ -110,8 +105,7 @@ import { DiseaseCrawlerService } from '../services/disease-crawler.service'; // 
     HospitalMapper, // 병원 데이터베이스 CRUD 작업
     PharmacyMapper, // 약국 데이터베이스 CRUD 작업
     DurIngredientMapper, // DUR 성분 데이터베이스 CRUD 작업
-    DurItemMapper, // DUR 품목 데이터베이스 CRUD 작업
-    DataCrawlerMapper // 데이터 크롤러 데이터베이스 CRUD 작업
+    DurItemMapper // DUR 품목 데이터베이스 CRUD 작업
   ],
   exports: [
     // 다른 모듈에서 사용할 수 있도록 서비스들을 외부로 노출
@@ -129,13 +123,7 @@ import { DiseaseCrawlerService } from '../services/disease-crawler.service'; // 
     
     // DUR 데이터 수집 서비스들
     DurIngredientService, // DUR 성분 규칙 수집 기능을 다른 모듈에서 사용 가능
-    DurItemService, // DUR 품목 규칙 수집 기능을 다른 모듈에서 사용 가능
-    
-    // 질병 정보 크롤링 서비스
-    DiseaseCrawlerService, // 질병 정보 크롤링 기능을 다른 모듈에서 사용 가능
-    
-    // 데이터베이스 매퍼들
-    DataCrawlerMapper // 데이터 크롤러 매퍼를 다른 모듈에서 사용 가능
+    DurItemService // DUR 품목 규칙 수집 기능을 다른 모듈에서 사용 가능
   ]
 })
 export class DataCollectorModule {}

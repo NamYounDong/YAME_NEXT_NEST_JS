@@ -56,9 +56,8 @@ import { Controller, Get, Post, Query, Logger, Req, Body } from '@nestjs/common'
 // 데이터 수집 서비스 및 관련 인터페이스 임포트
 import { DataCollectorService, CollectionSummary } from '../services/data-collector.service';
 import { CollectionResult } from '../interfaces/data-collection.interface';
-// Express HTTP 요청 객체 및 질병 크롤러 서비스 임포트
+// Express HTTP 요청 객체 임포트
 import { Request } from 'express';
-import { DiseaseCrawlerService } from '../services/disease-crawler.service';
 
 /**
  * 데이터 수집 컨트롤러
@@ -77,11 +76,9 @@ export class DataCollectorController {
    * DataCollectorController 생성자
    * NestJS 의존성 주입(DI) 시스템을 통해 필요한 서비스 인스턴스들을 자동으로 주입받음
    * @param dataCollectorService - 데이터 수집 관리 서비스 (의존성 주입으로 자동 생성)
-   * @param diseaseCrawlerService - 질병 정보 크롤링 서비스 (의존성 주입으로 자동 생성)
    */
   constructor(
-    private dataCollectorService: DataCollectorService, 
-    private diseaseCrawlerService: DiseaseCrawlerService
+    private dataCollectorService: DataCollectorService
   ) {}
 
   /**
@@ -529,144 +526,6 @@ export class DataCollectorController {
     return await this.dataCollectorService.collectHiraPharmacyData(force);
   }
 
-  /**
-   * 질병 데이터 수집 엔드포인트 (POST /api/data-collector/collect-disease)
-   * 웹 크롤링을 통해 질병 정보를 수집합니다.
-   * 
-   * NestJS 요청 처리 흐름:
-   * 1. HTTP POST 요청이 /api/data-collector/collect-disease 경로로 들어옴
-   * 2. 로그 레벨로 질병 데이터 수집 요청 기록
-   * 3. DiseaseCrawlerService.runFullCrawl() 메서드 호출하여 크롤링 실행
-   * 4. 크롤링 결과를 CollectionResult 형식으로 변환
-   * 5. 수집 결과를 JSON 응답으로 자동 변환
-   * 
-   * @returns 질병 데이터 수집 결과 (CollectionResult 타입, JSON 형태로 자동 직렬화)
-   */
-  @Post('collect-disease') // HTTP POST 메서드 매핑 (/collect-disease 경로)
-  async collectDiseaseData(): Promise<CollectionResult<any>> {
-    // 로그 레벨로 질병 데이터 수집 요청 기록 (크롤링 방식임을 명시)
-    this.logger.log(`질병 데이터 수집 요청 - 크롤링`);
-    
-    // DiseaseCrawlerService의 runFullCrawl 메서드 호출하여 질병 정보 크롤링 실행
-    // 64는 크롤링할 페이지 수를 의미 (매개변수로 전달)
-    const result = await this.diseaseCrawlerService.runFullCrawl(64);
-    
-    // 크롤링 결과를 CollectionResult 형식으로 변환하여 반환
-    // NestJS가 자동으로 JSON 응답으로 직렬화
-    return {
-      success: true,           // 성공 여부
-      data: result,            // 크롤링된 질병 데이터
-      totalCount: result.length, // 총 데이터 개수
-      pageCount: 1,            // 페이지 수 (크롤링은 단일 작업)
-      currentPage: 1,          // 현재 페이지
-      processingTime: 0        // 처리 시간 (크롤링은 별도로 측정되지 않음)
-    };
-  }
-
-
-
-
-  /**
-    * 크롤링 전에 큐에 넣는 이유 : 안정성·통제·재현성. 
-    - 큐가 없으면 “발견→수집→저장”이 한 번에 얽혀서 터졌을 때 복구가 어렵고, 부하·중복·우선순위 조절이 불가. 
-    
-    * 큐를 앞단에 두면 생기는 이점.
-    1. 중복 방지(멱등) & 재시도 관리
-      - CRAWL_QUEUE의 UNIQUE(SOURCE, URL_OR_TITLE)로 같은 대상 중복 등록 차단.
-      - 실패 시 STATUS='ERROR'와 ERROR_MSG 저장 → 원인별 재시도/재등록이 쉽습니다.
-      - 본문은 추가로 해시(SHA1) 검증을 하므로, 내용이 동일하면 다시 저장 안 함(저장 멱등).
-    2. 백프레셔(Backpressure) & 레이트리밋
-      - “발견(enqueue)”과 “수집(fetch)”을 분리해 버퍼를 둡니다.
-      - 워커는 큐에서 천천히 당겨서 처리 → WIKI_RPS/AMC_RPS로 예의 있게(429/차단 예방), 우리 서버도 스파이크 방지.
-    3. 우선순위/스케줄링
-      - PRIORITY로 긴급/중요 문서 먼저 처리.
-      - 야간 배치나 저부하 시간대에만 워커 가동/속도 조절이 가능.
-    4. 장애 격리 & 운영 관제
-      - 등록은 Nest(관리 UI), 수집은 **Python 워커(ETL)**로 역할 분리 → 한쪽 장애가 다른 쪽까지 전파되지 않음.
-      - ENQ_AT/DEQ_AT/STATUS와 ETL_JOB_RUNS로 모니터링/리포트가 가능(얼마 넣었고, 얼마나 처리됐나).
-    5. 동시성 안전성(멀티 워커)
-      - SELECT … FOR UPDATE(또는 lease 컬럼)로 한 항목을 두 워커가 동시에 처리하는 문제를 방지.
-      - 수평 확장 시에도 중복 수집 없이 안전하게 확장.
-    6. 재현성 & 감사지표
-      - “그날 어떤 URL을 왜/언제 처리했는지” 큐와 실행 로그로 증빙 가능.
-      - 동일 큐를 재사용하면 동일 작업을 재현할 수 있어 파서 개선 후 재처리에도 유리.
-    참고: 지금 워커는 성공 시 PENDING → FETCHED로 바꾸고 끝냅니다. 원하면 DONE 상태를 추가해 성공 처리 명시도 가능해요(옵션). 
-
-    * 상태 흐름(현재 설계)
-    PENDING  --(워커 claim/락)-->  FETCHED  --(성공 저장)--> [종료]
-      |                               |
-      |--(파싱/HTTP 실패)--> ERROR     |--(규칙상 제외 등)--> SKIPPED
-
-      1.PENDING: 대기
-      2. FETCHED: 워커가 잡아 처리 완료(현재 성공의 의미로 사용)
-      3. ERROR: HTTP/파싱 실패(원인 ERROR_MSG)
-      4. SKIPPED: 로봇 배제, 404, 비대상 카테고리 등 정책상 제외
-  */
-
-  // 큐 등록(멱등): SOURCE + URL_OR_TITLE 유니크 : 위키 타이틀
-  @Get('enqueue/wiki-title')
-  enqueueWiki(@Query('title') title: string, @Query('priority') priority?: number) {
-    return this.dataCollectorService.enqueue('WIKIPEDIA', title, priority ?? 5);
-  }
-
-  // 큐 등록(멱등): SOURCE + URL_OR_TITLE 유니크 : AMC 주소
-  @Get('enqueue/amc-url')
-  enqueueAmc(@Query('url') url: string, @Query('priority') priority?: number) {
-    return this.dataCollectorService.enqueue('AMC', url, priority ?? 5);
-  }
-
-  // 큐 상태
-  @Get('queue/stats')
-  stats() { 
-    return this.dataCollectorService.queueStats(); 
-  }
-
-  // 최근 ETL 실행 로그
-  @Get('runs/recent')
-  recent(@Query('limit') limit = 20) { 
-    return this.dataCollectorService.recentRuns(Number(limit)); 
-  }
-
-  // Python 워커 실행 — once/loop 모드
-  @Get('runs/worker')
-  runWorker(@Query('mode') mode?: 'once'|'loop', @Query('maxItems') maxItems?: number, @Query('source') source?: 'AMC'|'WIKIPEDIA'|'ANY') {
-    return this.dataCollectorService.runWorker(mode ?? 'once', maxItems ?? 10, source);
-  }
-
-
-  // Wikipedia 카테고리 시딩 잡 생성
-  @Post('wiki-category')
-    createWikiSeed(@Body() b: { category: string; depthLimit?: number; includeSubcats?: boolean; rps?: number }) {
-    return this.dataCollectorService.createWikiCategorySeed(b.category, b.depthLimit ?? 2, b.includeSubcats ?? true, b.rps ?? 0.5);
-  }
-
-
-  // AMC 인덱스 시딩 잡 생성 — 최소 입력: ROOT_URL만 주면 동작
-  @Post('amc-index')
-  createAmcSeed(@Body() b: { rootUrl: string; paginationMode?: 'QUERY_PARAM'|'LINK_NEXT'|'CSS_SELECTOR'; queryParamName?: string; startPage?: number; cssNextSelector?: string; rps?: number }) {
-    return this.dataCollectorService.createAmcIndexSeed({
-      rootUrl: b.rootUrl,
-      paginationMode: b.paginationMode ?? 'QUERY_PARAM',
-      queryParamName: b.queryParamName ?? 'pageIndex',
-      startPage: b.startPage ?? 1,
-      cssNextSelector: b.cssNextSelector ?? 'a.next, a[rel="next"], a:contains("다음"), a:contains("Next")',
-      rps: b.rps ?? 0.3,
-    });
-  }
-
-
-  // 시딩 워커 실행(공용) — timeBudget/maxApiCalls 소진 시 PAUSED로 저장 후 종료
-  @Post('seed/run')
-  runSeeder(@Body() b: { type: 'WIKI'|'AMC'; seedId: number; timeBudgetSec?: number; maxApiCalls?: number }) {
-    return this.dataCollectorService.runSeeder(b.type, b.seedId, b.timeBudgetSec ?? 3600, b.maxApiCalls ?? 5000);
-  }
-
-
-  // 상태 조회(공용)
-  @Get('seed/status')
-  seedStatus(@Query('type') type: 'WIKI'|'AMC', @Query('seedId') seedId: number) {
-    return this.dataCollectorService.seedStatus(type, Number(seedId));
-  }
 
 
 
@@ -681,43 +540,6 @@ export class DataCollectorController {
 
 
 
-
-
-
-
-
-
-
-
-  /**
-   * 
-   * 파기 예정 소스 : 학습으로서 의미 없어 보이는 데이터
-   * 질병 데이터 수집 엔드포인트 (POST /api/data-collector/collect-namuwiki-disease)
-   * 나무위키 덤프 데이터(Hugging Face)를 통해 질병 정보를 수집합니다.
-   * 
-   * NestJS 요청 처리 흐름:
-   * 1. HTTP POST 요청이 /api/data-collector/collect-namuwiki-disease 경로로 들어옴
-   * 2. disease_dump_extract_and_load.py를 호출하여 나무위키 덤프 데이터를 수집(DB 저장)
-   * 
-   * @returns 질병 데이터 수집 결과 (CollectionResult 타입, JSON 형태로 자동 직렬화)
-   */
-  @Post('collect-namuwiki-disease') // HTTP POST 메서드 매핑 (/collect-namuwiki-disease 경로)
-  async collectNamuwikiDiseaseData(): Promise<CollectionResult<any>> {
-    // 로그 레벨로 질병 데이터 수집 요청 기록 (크롤링 방식임을 명시)
-    this.logger.log(`질병 데이터 수집 요청 - 나무위키 덤프 데이터`);
-    
-    const result = await this.diseaseCrawlerService.runNamuwikiDumpCrawl({createTable: false});
-    
-    // NestJS가 자동으로 JSON 응답으로 직렬화
-    return {
-      success: true,           // 성공 여부
-      data: [],
-      totalCount: 0,
-      pageCount: 0,
-      currentPage: 0,
-      processingTime: 0
-    };
-  }
 
 
 

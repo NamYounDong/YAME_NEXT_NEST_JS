@@ -1,59 +1,61 @@
 # YAME (Your Assessment for Medical Evaluation)
 
-## 🏥 디지털 예진 시스템 - 자가증상입력 기반 의약품 추천 시스템
+## 🏥 디지털 예진 시스템 - LLM RAG 기반 의약품 추천 시스템
 
-AI 기반 증상 분석을 통한 스마트 의료 서비스 플랫폼입니다. 사용자의 증상을 분석하여 약국 방문 또는 병원 진료의 적절한 의료 조치를 추천하고, 주변 의료기관 정보를 제공합니다.
+**GPT-4o**와 **DUR 데이터**를 활용한 RAG(Retrieval-Augmented Generation) 기반 스마트 의료 서비스 플랫폼입니다. 사용자의 자연어 증상을 분석하여 안전한 OTC 약품을 추천하거나 병원 진료를 안내하며, GPS 기반 주변 의료기관 정보를 제공합니다.
+
+### 🌟 주요 특징
+- 🤖 **OpenAI GPT-4o**: 자연어 증상을 의학 용어로 변환하고 질병 추론
+- 💊 **DUR RAG**: 식약처 DUR 데이터를 활용한 안전한 약품 추천
+- 🔍 **상세 로깅**: 모든 LLM 호출, SQL 쿼리, 검색 결과 실시간 모니터링
+- 📍 **위치 기반**: GPS 기반 주변 약국/병원 검색 (운영시간 고려)
+- 🗺️ **VWorld 연동**: 지도 표시 및 주소 복사 기능
 
 ## 📋 프로젝트 구조
 
 ```
 YAME/
-├── backend/                           # NestJS 백엔드 API
+├── backend/                           # NestJS 백엔드 API (LLM RAG 기반)
 │   ├── src/
 │   │   ├── config/                    # 모듈 설정
-│   │   │   ├── assessments.module.ts  # 평가 모듈 설정
+│   │   │   ├── assessments.module.ts  # 평가 모듈
 │   │   │   ├── data-collector.module.ts # 데이터 수집 모듈
-│   │   │   ├── data-ml.module.ts      # ML 모듈 설정
-│   │   │   ├── database.module.ts     # 데이터베이스 설정
-│   │   │   ├── redis.module.ts        # Redis 설정
-│   │   │   ├── session.module.ts      # 세션 관리 설정
-│   │   │   ├── symptom-logs.module.ts # 증상 로그 모듈
+│   │   │   ├── database.module.ts     # 데이터베이스 모듈
+│   │   │   ├── redis.module.ts        # Redis 모듈
+│   │   │   ├── session.module.ts      # 세션 관리 모듈
+│   │   │   ├── symptom-logs.module.ts # LLM RAG 증상 분석 모듈 ⭐
 │   │   │   └── users.module.ts        # 사용자 모듈
 │   │   ├── controllers/               # API 컨트롤러
 │   │   │   ├── app.controller.ts      # 메인 앱 컨트롤러
 │   │   │   ├── assessments.controller.ts # 평가 컨트롤러
 │   │   │   ├── data-collector.controller.ts # 데이터 수집 컨트롤러
-│   │   │   ├── data-ml.controller.ts  # ML 컨트롤러
+│   │   │   ├── symptom-logs.controller.ts # 증상 분석 API ⭐
 │   │   │   └── users.controller.ts    # 사용자 컨트롤러
 │   │   ├── database/                  # 데이터베이스 매퍼
 │   │   │   ├── base.mapper.ts         # 기본 매퍼
-│   │   │   ├── data-crawler.mapper.ts # 데이터 크롤러 매퍼
 │   │   │   ├── dur-ingredient.mapper.ts # DUR 성분 매퍼
 │   │   │   ├── dur-item.mapper.ts     # DUR 품목 매퍼
-│   │   │   ├── emergency.mapper.ts    # 응급실 매퍼
+│   │   │   ├── emergency.mapper.ts    # 응급의료기관 매퍼
 │   │   │   ├── hospital.mapper.ts     # 병원 매퍼
 │   │   │   ├── pharmacy.mapper.ts     # 약국 매퍼
-│   │   │   └── trauma.mapper.ts       # 외상 매퍼
+│   │   │   └── trauma.mapper.ts       # 외상센터 매퍼
 │   │   ├── decorators/                # 커스텀 데코레이터
 │   │   │   └── session-user.decorator.ts # 세션 사용자 데코레이터
 │   │   ├── guards/                    # 인증 가드
 │   │   │   ├── external-auth.guard.ts # 외부 인증 가드
 │   │   │   └── session-auth.guard.ts  # 세션 인증 가드
-│   │   ├── Interfaces/                # DTO 및 인터페이스
+│   │   ├── interfaces/                # DTO 및 인터페이스
+│   │   │   ├── analyze-symptom.dto.ts # 증상 분석 요청 DTO ⭐
 │   │   │   ├── create-assessment.dto.ts
 │   │   │   ├── create-user.dto.ts
 │   │   │   ├── data-collection.interface.ts
 │   │   │   ├── response-base.dto.ts
 │   │   │   ├── update-assessment.dto.ts
 │   │   │   └── update-user.dto.ts
-│   │   ├── ml_src/                    # Python ML 소스
-│   │   │   ├── config/                # ML 설정
-│   │   │   └── svrc/                  # ML 서비스
-│   │   │       └── disease/           # 질병 분석 모듈
 │   │   ├── models/                    # 데이터 모델
 │   │   │   ├── assessment.entity.ts   # 평가 엔티티
 │   │   │   └── user.entity.ts         # 사용자 엔티티
-│   │   ├── scheduler/                 # 스케줄러
+│   │   ├── scheduler/                 # 데이터 수집 스케줄러
 │   │   │   ├── dur-collection.scheduler.ts # DUR 수집 스케줄러
 │   │   │   ├── emergency-collection.scheduler.ts # 응급실 수집
 │   │   │   ├── full-collection.scheduler.ts # 전체 수집
@@ -63,30 +65,34 @@ YAME/
 │   │   │   ├── app.service.ts         # 메인 서비스
 │   │   │   ├── assessments.service.ts # 평가 서비스
 │   │   │   ├── data-collector.service.ts # 데이터 수집 서비스
-│   │   │   ├── data-ml.service.ts     # ML 서비스
 │   │   │   ├── database.service.ts    # 데이터베이스 서비스
-│   │   │   ├── disease-crawler.service.ts # 질병 크롤러
-│   │   │   ├── dur-ingredient.service.ts # DUR 성분 서비스
-│   │   │   ├── dur-item.service.ts    # DUR 품목 서비스
-│   │   │   ├── emergency-base.service.ts # 응급실 서비스
-│   │   │   ├── hira-hospital.service.ts # HIRA 병원 서비스
-│   │   │   ├── hira-pharmacy.service.ts # HIRA 약국 서비스
 │   │   │   ├── redis.service.ts       # Redis 서비스
 │   │   │   ├── session.service.ts     # 세션 서비스
-│   │   │   ├── trauma-base.service.ts # 외상 서비스
-│   │   │   └── users.service.ts       # 사용자 서비스
+│   │   │   ├── users.service.ts       # 사용자 서비스
+│   │   │   │
+│   │   │   ├── # 📍 LLM RAG 증상 분석 서비스 (NEW)
+│   │   │   ├── openai.service.ts      # OpenAI GPT-4o API ⭐
+│   │   │   ├── symptom-analysis.service.ts # 증상 분석 ⭐
+│   │   │   ├── drug-recommendation.service.ts # 약품 추천 ⭐
+│   │   │   ├── facility-search.service.ts # 시설 검색 ⭐
+│   │   │   ├── vworld.service.ts      # VWorld 지도 API ⭐
+│   │   │   │
+│   │   │   ├── # 📍 데이터 수집 서비스
+│   │   │   ├── dur-ingredient.service.ts # DUR 성분 수집
+│   │   │   ├── dur-item.service.ts    # DUR 품목 수집
+│   │   │   ├── emergency-base.service.ts # 응급의료기관 수집
+│   │   │   ├── hira-hospital.service.ts # HIRA 병원 수집
+│   │   │   ├── hira-pharmacy.service.ts # HIRA 약국 수집
+│   │   │   └── trauma-base.service.ts # 외상센터 수집
 │   │   ├── utils/                     # 유틸리티
 │   │   │   ├── api-collector.util.ts  # API 수집 유틸
-│   │   │   ├── case-converter.util.ts # 케이스 변환 유틸
-│   │   │   └── python-script.util.ts  # Python 스크립트 유틸
+│   │   │   └── case-converter.util.ts # camelCase 변환 유틸
 │   │   ├── app.module.ts              # 메인 앱 모듈
 │   │   └── main.ts                    # 앱 진입점
 │   ├── config/                        # 환경 설정
 │   ├── database/                      # 데이터베이스 파일
 │   ├── dist/                          # 빌드 결과물
 │   ├── logs/                          # 로그 파일
-│   ├── ml_models/                     # ML 모델 파일
-│   ├── venv/                          # Python 가상환경
 │   ├── package.json                   # Node.js 의존성
 │   └── yame_create_tables.sql         # DB 스키마
 ├── frontend/                          # Next.js 프론트엔드
@@ -94,31 +100,31 @@ YAME/
 │   │   ├── app/                       # App Router 페이지
 │   │   │   ├── admin/                 # 관리자 페이지
 │   │   │   │   └── scheduler/         # 스케줄러 관리
-│   │   │   ├── symptom-analysis/      # 증상 분석 페이지
+│   │   │   ├── symptom-analysis/      # LLM 증상 분석 페이지 ⭐
 │   │   │   ├── globals.css            # 전역 스타일
-│   │   │   ├── layout.tsx             # 레이아웃
+│   │   │   ├── layout.tsx             # 루트 레이아웃
 │   │   │   └── page.tsx               # 메인 페이지
 │   │   ├── components/                # React 컴포넌트
 │   │   │   ├── admin/                 # 관리자 컴포넌트
-│   │   │   │   └── DataCollectionPanel.tsx
+│   │   │   │   └── DataCollectionPanel.tsx # 데이터 수집 패널
 │   │   │   ├── loading/               # 로딩 컴포넌트
-│   │   │   │   ├── HeartLoader.tsx
-│   │   │   │   └── LoadingOverlay.tsx
+│   │   │   │   ├── HeartLoader.tsx    # 하트 로더 애니메이션
+│   │   │   │   └── LoadingOverlay.tsx # 전역 로딩 오버레이
 │   │   │   ├── map/                   # 지도 컴포넌트
-│   │   │   │   └── VWorldMap.tsx
+│   │   │   │   └── VWorldMap.tsx      # VWorld 지도 ⭐
 │   │   │   ├── providers/             # 컨텍스트 프로바이더
-│   │   │   │   └── LoadingProvider.tsx
-│   │   │   ├── symptom/               # 증상 관련 컴포넌트
-│   │   │   │   ├── AnalysisResult.tsx
-│   │   │   │   └── SymptomInputForm.tsx
-│   │   │   ├── providers.tsx          # 프로바이더 설정
-│   │   │   └── YameLogo.tsx           # 로고 컴포넌트
-│   │   ├── services/                  # API 서비스
-│   │   │   └── symptom.ts             # 증상 서비스
-│   │   ├── types/                     # TypeScript 타입
-│   │   │   └── symptom.ts             # 증상 타입
-│   │   └── utils/                     # 유틸리티
-│   │       └── api.ts                 # API 유틸
+│   │   │   │   └── LoadingProvider.tsx # 로딩 상태 프로바이더
+│   │   │   ├── symptom/               # 증상 분석 컴포넌트 ⭐
+│   │   │   │   ├── AnalysisResult.tsx # 분석 결과 표시
+│   │   │   │   └── SymptomInputForm.tsx # 증상 입력 폼
+│   │   │   ├── providers.tsx          # 프로바이더 통합
+│   │   │   └── YameLogo.tsx           # YAME 로고
+│   │   ├── services/                  # API 서비스 레이어
+│   │   │   └── symptom.ts             # 증상 분석 서비스
+│   │   ├── types/                     # TypeScript 타입 정의
+│   │   │   └── symptom.ts             # 증상 관련 타입
+│   │   └── utils/                     # 유틸리티 함수
+│   │       └── api.ts                 # API 통신 유틸 (snake_case ↔ camelCase 변환) ⭐
 │   ├── public/                        # 정적 파일
 │   ├── package.json                   # Node.js 의존성
 │   └── next.config.js                 # Next.js 설정
@@ -130,12 +136,14 @@ YAME/
 
 ### Backend (NestJS)
 - **Framework**: NestJS
-- **Database**: MariaDB (Native Driver) - 공간 데이터 지원
+- **AI/ML**: OpenAI GPT-4o (RAG)
+- **Database**: MariaDB (Native Driver) - 공간 데이터 및 SPATIAL INDEX
 - **Cache/Session**: Redis - 세션 관리 및 캐싱
 - **Authentication**: 외부 Spring Security 서비스 연동
 - **API Documentation**: Swagger/OpenAPI
 - **Validation**: class-validator, class-transformer
-- **외부 API**: HIRA, 식약처 DUR, VWorld 지도
+- **Logging**: 상세한 디버깅 로그 시스템 (LLM, SQL, 검색 결과)
+- **외부 API**: OpenAI, HIRA, 식약처 DUR, VWorld 지도, E-Gen 응급의료
 
 ### Frontend (Next.js)
 - **Framework**: Next.js 14 (App Router)
@@ -146,15 +154,18 @@ YAME/
 - **Map**: Leaflet + VWorld API
 - **UI Components**: Heroicons
 - **Notifications**: React Hot Toast
+- **API Communication**: snake_case ↔ camelCase 자동 변환
 
 ## 🚀 구현된 주요 기능
 
-### 💊 증상 분석 시스템
-- ✅ **AI 기반 증상 분석**: 사용자 입력 증상을 ML로 분석하여 질병 예측
-- ✅ **약국/병원 분기 추천**: 증상 심각도에 따른 적절한 의료 조치 추천
-- ✅ **DUR 체크**: 의약품 안전성 및 금기사항 확인
-- ✅ **GPS 기반 위치 서비스**: 주변 의료기관 검색 및 거리 계산
-- ✅ **실시간 피드백**: 추천 결과에 대한 만족도 수집
+### 💊 LLM RAG 증상 분석 시스템
+- ✅ **LLM 기반 증상 분석**: GPT-4o로 자연어 증상을 의학 용어로 변환하고 질병 추론
+- ✅ **RAG 기반 약품 추천**: DUR 데이터베이스 검색 후 LLM이 최적 OTC 약품 선택
+- ✅ **DUR 체크**: 임신부, 고령자, 연령별 금기사항 자동 검증
+- ✅ **심각도 평가**: LLM이 1-10점 심각도 점수 산출하여 약국/병원 분기
+- ✅ **GPS 기반 위치 서비스**: 주변 약국/병원 검색 (MariaDB SPATIAL INDEX 활용)
+- ✅ **실시간 로깅**: 프롬프트, SQL 쿼리, 검색 결과 등 모든 프로세스 모니터링
+- ✅ **VWorld 지도**: 지도 표시 및 주소 복사 기능
 
 ### 🔒 보안 및 인증
 - ✅ **외부 인증 연동**: Spring Security 기반 별도 인증 서비스 연동
@@ -289,29 +300,44 @@ cd frontend && npm run build && npm run start
 
 ## 📊 시스템 흐름도
 
-### 증상 분석 워크플로우
+### LLM RAG 증상 분석 워크플로우
 ```
 1. 사용자 위치 수집 (GPS)
    ↓
 2. 증상 입력 (자유 텍스트 + 보조 증상)
    ↓  
-3. AI 증상 분석 (ML 예측 서비스)
+3. GPT-4o 증상 분석 (SymptomAnalysisService)
+   - 증상 → 의학 용어 변환 (예: "미열" → "low-grade fever")
+   - 질병 추론 및 확률 계산
+   - 심각도 점수 산정 (1-10)
+   - 로그: 프롬프트, GPT-4o 응답, 파싱 결과
    ↓
-4. 추천 분기 결정 (약국 vs 병원)
+4. 심각도 기반 분기 결정
+   - 1-6점: 약국 (PHARMACY)
+   - 7점: 약국 + 병원 권고
+   - 8-10점: 병원 (HOSPITAL)
    ↓
-5-A. 약국 추천 경로:
-   - 추천 의약품 생성
-   - DUR 안전성 체크
-   - 주변 약국 검색
+5-A. 약국 추천 경로 (DrugRecommendationService):
+   - DUR 데이터베이스에서 OTC 약품 검색 (의학 용어 기반)
+   - 로그: 검색 키워드, SQL 쿼리, 검색 결과
+   - GPT-4o에게 검색된 약품 전달 → 최적 약품 선택
+   - DUR 금기사항 체크 (임신부, 고령자, 연령)
+   - 주변 약국 검색 (운영시간 필터링)
    ↓
-5-B. 병원 추천 경로:  
-   - 병원 접수 토큰 생성
-   - 주변 병원 검색 (응급실 우선)
-   - 응급도 평가
+5-B. 병원 추천 경로 (FacilitySearchService):
+   - 주변 병원 검색 (MariaDB SPATIAL INDEX)
+   - 운영시간 필터링 (moment-timezone)
+   - 거리순 정렬
    ↓
-6. 결과 표시 및 지도 제공
+6. VWorld 지도 연동 (VWorldService)
+   - 좌표 → 주소 변환
+   - 지도 표시 + 주소 복사
    ↓
-7. 사용자 피드백 수집
+7. 결과 저장 (SYMPTOM_LOGS 테이블)
+   - 원본 증상, 의학 용어, 질병, 심각도
+   - 추천 약품, GPS 위치, 주변 시설
+   ↓
+8. 결과 표시 및 사용자 피드백 수집
 ```
 
 ### 데이터 흐름
@@ -328,32 +354,50 @@ Redis (캐시/세션)
 ```
 
 ### 주요 API 엔드포인트
-- `POST /symptom-logs/analyze` - 증상 분석 및 추천
-- `POST /symptom-logs/feedback` - 피드백 제출
-- `POST /symptom-logs/intake-token/:token` - 병원 접수 토큰 사용
-- `GET /symptom-logs/feedback/stats` - 피드백 통계
-- `GET /symptom-logs/tokens/stats` - 토큰 사용 통계
+- `POST /api/symptom-logs/analyze` - LLM RAG 기반 증상 분석 및 약품 추천
+- `GET /api/data-collector/status` - 데이터 수집 상태 조회
+- `GET /api/data-collector/collect-all` - 전체 데이터 수집 실행
+- `GET /api/data-collector/collect-hospitals` - HIRA 병원 데이터 수집
+- `GET /api/data-collector/collect-pharmacies` - HIRA 약국 데이터 수집
+- `GET /api/data-collector/collect-dur-item` - DUR 품목 데이터 수집
+
+### 로그 모니터링
+증상 분석 시 다음 로그를 통해 전체 프로세스를 모니터링할 수 있습니다:
+```
+[SymptomAnalysis] 증상 분석 시작: 머리가 아프고 열이 나요
+[OpenAI] 증상 분석 프롬프트: ...
+[OpenAI] GPT-4o 응답: {"medicalTerms": [...], ...}
+[SymptomAnalysis] LLM 분석 결과: 의학 용어=headache, fever / 심각도=4/10
+[DrugRecommendation] 검색 키워드: headache, fever
+[DrugRecommendation] 실행 SQL: SELECT ... FROM ITEM_DUR_INFO WHERE ...
+[DrugRecommendation] 검색 결과: 15개 약품 발견
+[DrugRecommendation] 처음 5개 약품: 1. 타이레놀 (200001234), ...
+[OpenAI] 약품 추천 GPT-4o 응답: ...
+[DrugRecommendation] 최종 추천 약품 3개
+```
 
 ## 🔮 향후 계획
 
-### Phase 2 (단기) - 필수 구성
-⚠️ **시스템 운영을 위해 다음 외부 서비스들의 실제 연동이 필요합니다:**
-
-- [ ] **HIRA API 실 연동** (병원 정보 수집을 위해 HIRA_API_KEY 필요)
-- [ ] **식약처 DUR API 실 연동** (의약품 안전성 체크를 위해 MFDS_DUR_API_KEY 필요)
-- [ ] **약국 정보 API 연동** (PHARMACY_API_KEY 필요)
-- [ ] **외부 인증 서비스 연동** (AUTH_SERVICE_ENABLED=true 설정 필요)
-- [ ] **의약품 정보 API 연동** (추천 약물 정보 제공을 위해 필요)
-- [ ] **성능 최적화**
+### Phase 2 (단기) - 현재 진행 중 ✅
+- [x] **LLM RAG 시스템 구축** - GPT-4o + DUR 데이터 기반 약품 추천
+- [x] **상세 로깅 시스템** - 모든 LLM 호출, SQL 쿼리, 검색 결과 로깅
+- [x] **VWorld 지도 연동** - 위치 기반 서비스 및 주소 변환
+- [x] **DUR 데이터 수집** - 식약처 API 연동 및 자동 스케줄링
+- [ ] **데이터베이스 튜닝** - OTC 약품 검색 최적화 (한글/영문 키워드)
+- [ ] **프롬프트 엔지니어링** - GPT-4o 의학 용어 변환 정확도 향상
+- [ ] **캐싱 시스템** - LLM 응답 캐싱으로 비용 절감
 
 ### Phase 3 (중기)
-- [ ] 실시간 응급실 현황 연동
-- [ ] 다국어 지원 (영어, 중국어)
-- [ ] 모바일 앱 개발 (React Native)
-- [ ] 음성 인식 증상 입력
+- [ ] **RAG 고도화** - 벡터 DB (Pinecone, Weaviate) 도입으로 검색 정확도 향상
+- [ ] **실시간 응급실 현황 연동** - E-Gen API 실시간 데이터 수집
+- [ ] **다국어 지원** (영어, 중국어) - GPT-4o 다국어 프롬프트
+- [ ] **모바일 앱 개발** (React Native)
+- [ ] **음성 인식 증상 입력** - Whisper API 연동
 
 ### Phase 4 (장기)
-- [ ] AI 모델 자체 학습 및 개선
+- [ ] **Fine-tuning** - GPT-4o 의료 도메인 파인튜닝
+- [ ] **멀티모달** - 증상 사진 분석 (GPT-4V)
+- [ ] **개인화** - 사용자별 증상 이력 기반 맞춤 추천
 
 ## 📊 데이터 수집 시스템
 

@@ -16,7 +16,6 @@ import { AssessmentsModule } from './config/assessments.module';
 import { SymptomLogsModule } from './config/symptom-logs.module';
 import { DataCollectorModule } from './config/data-collector.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
-import { DataMLModule } from './config/data-ml.module';
 
 /**
  * 애플리케이션 루트 모듈
@@ -37,7 +36,6 @@ import { DataMLModule } from './config/data-ml.module';
     SymptomLogsModule,   // 증상 로그 및 추천 시스템
     DataCollectorModule, // 데이터 수집 기능
     SchedulerModule,     // 스케줄러 기능
-    DataMLModule,        // 인공지능 관리 기능
   ],
   controllers: [AppController], // 루트 컨트롤러
   providers: [AppService],      // 루트 서비스
