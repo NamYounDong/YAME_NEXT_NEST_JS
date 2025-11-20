@@ -12,16 +12,13 @@ NestJS 기반의 의료 평가 시스템 백엔드 API
 
 ## 🚀 구현된 주요 기능
 
-### 🎯 야메 처방 (핵심 기능)
-- ✅ **LLM 기반 증상 분석**: GPT-4o를 활용한 자연어 증상 이해 및 의학 용어 변환
-- ✅ **RAG 기반 약품 추천**: DUR 데이터를 활용한 검색 증강 생성으로 안전한 OTC 약품 추천
-- ✅ **DUR 체크**: 임신부, 고령자, 연령별 금기사항 자동 검증
-- ✅ **심각도 판단**: LLM이 증상의 심각도를 평가하여 병원 안내 여부 결정 (1-10점)
-- ✅ **위치 기반 추천**: GPS 기반 주변 병원/약국 추천 (운영시간 고려, 거리순 정렬)
-- ✅ **VWorld 지도 연동**: 위치 정보를 지도와 주소로 표시 (주소 복사 기능)
-- ✅ **증상 로그 저장**: 통계 및 전염병 추적을 위한 데이터 수집 (GPS 위치 포함)
-- ✅ **OpenAI API 연동**: GPT-4o 모델 활용
-- ✅ **상세 로깅**: 모든 LLM 호출, SQL 쿼리, 검색 결과 실시간 로깅
+### 🎯 야메 진단 (핵심 기능) - WebSocket 기반 챗봇
+- ✅ **WebSocket Gateway**: Socket.IO를 통한 실시간 양방향 통신
+- ✅ **Agentend 연동**: FastAPI (LangChain + RAG) 서비스와 HTTP 통신
+- ✅ **클라이언트 관리**: 세션별 독립적인 채팅 룸 관리
+- ✅ **자동 재연결**: 연결 끊김 시 자동 재연결 처리
+- ✅ **메시지 라우팅**: 프론트엔드 ↔ NestJS ↔ FastAPI 메시지 전달
+- ✅ **세션 정리**: 채팅 종료 시 Redis 메모리 자동 해제
 
 ### 🔄 데이터 수집 시스템
 - ✅ **HIRA 병원 정보**: 건보공단 병원 기본정보 수집 (3000개씩 배치)
@@ -33,7 +30,7 @@ NestJS 기반의 의료 평가 시스템 백엔드 API
 - ✅ **자동 스케줄링**: 일/주/3분 단위 자동 데이터 수집
 
 ### 🔄 외부 API 연동
-- ✅ **OpenAI API**: GPT-4o 모델을 통한 증상 분석 및 약품 추천
+- ✅ **Agentend API**: FastAPI (LangChain + RAG) 서비스 연동 ⭐ NEW
 - ✅ **HIRA API**: 건보공단 병원/약국 정보 수집
 - ✅ **E-Gen API**: 응급의료기관 기본정보, 외상센터 기본정보 수집
 - ✅ **MFDS DUR API**: 식약처 의약품 금기사항 정보 (성분/품목 기반)
@@ -75,14 +72,15 @@ NestJS 기반의 의료 평가 시스템 백엔드 API
 ## 기술 스택
 
 - **Framework**: NestJS
+- **WebSocket**: Socket.IO (@nestjs/websockets)
 - **Database**: MariaDB (Native Driver)
 - **Cache/Session**: Redis
-- **AI/ML**: OpenAI GPT-4o (RAG)
+- **AI Service**: Agentend (FastAPI + LangChain + RAG) ⭐
 - **Authentication**: Session-based + JWT (호환)
 - **Validation**: class-validator, class-transformer
 - **Documentation**: Swagger/OpenAPI
 - **Testing**: Jest
-- **External APIs**: HIRA, E-Gen, MFDS DUR, VWorld
+- **External APIs**: Agentend, HIRA, E-Gen, MFDS DUR, VWorld
 
 ## 설치 및 실행
 
@@ -115,8 +113,8 @@ REDIS_PORT=6379
 REDIS_PASSWORD=
 REDIS_DB=0
 
-# OpenAI API
-OPENAI_API_KEY=sk-your-openai-api-key-here
+# Agentend (FastAPI) URL
+AGENTEND_URL=http://127.0.0.1:8000
 
 # VWorld API
 VWORLD_API_KEY=your-vworld-api-key

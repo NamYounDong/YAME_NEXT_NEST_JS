@@ -7,15 +7,15 @@ Next.js 기반의 의료 평가 시스템 프론트엔드
 
 ## 🚀 구현된 주요 기능
 
-### 🤖 LLM 기반 증상 분석 (핵심 기능)
-- ✅ **자연어 증상 입력**: 사용자가 일상 언어로 증상 설명
-- ✅ **AI 증상 분석**: GPT-4o가 증상을 의학 용어로 변환하고 질병 추론
-- ✅ **약품 추천**: DUR 데이터 기반 안전한 OTC 약품 추천
-- ✅ **금기사항 체크**: 임신부, 고령자 등 사용자별 맞춤 추천
-- ✅ **심각도 판단**: AI가 증상의 심각도를 평가하여 병원/약국 안내
-- ✅ **위치 기반 시설 안내**: GPS 기반 가까운 약국/병원 추천
-- ✅ **지도 연동**: VWorld API를 통한 지도 표시 및 길찾기
-- ✅ **주소 복사**: 원클릭 주소 복사 기능
+### 💬 WebSocket 기반 대화형 증상 분석 (핵심 기능) ⭐ NEW
+- ✅ **실시간 채팅 UI**: Socket.IO를 통한 양방향 통신
+- ✅ **대화형 증상 수집**: 챗봇이 자연스럽게 질문하며 정보 수집
+- ✅ **질환 선택 버튼**: LLM이 추론한 질환을 버튼으로 선택
+- ✅ **약품/병원 추천**: 선택한 질환에 맞는 추천 결과 표시
+- ✅ **자동 스크롤**: 새 메시지 시 자동으로 스크롤
+- ✅ **로딩 상태**: 챗봇 입력 중 애니메이션 표시
+- ✅ **세션 관리**: 채팅 종료 시 자동 메모리 해제
+- ✅ **재연결 처리**: 연결 끊김 시 자동 재연결
 
 ### UI/UX
 - ✅ **반응형 디자인**: 모바일, 태블릿, 데스크톱 최적화
@@ -58,10 +58,10 @@ Next.js 기반의 의료 평가 시스템 프론트엔드
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
-- **State Management**: React Query + Context API
-- **Forms**: React Hook Form + Zod
+- **WebSocket**: Socket.IO Client ⭐ NEW
+- **State Management**: React Hooks (useState, useEffect)
 - **HTTP Client**: Axios
-- **Maps**: VWorld API, Leaflet (예정)
+- **Maps**: VWorld API, Leaflet
 - **Geolocation**: Browser Geolocation API
 - **Icons**: Heroicons
 - **Notifications**: React Hot Toast

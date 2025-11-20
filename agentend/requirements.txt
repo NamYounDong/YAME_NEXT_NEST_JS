@@ -1,0 +1,25 @@
+# --- FastAPI 서버 ---
+fastapi
+uvicorn[standard]
+
+# --- LangChain / GPT 모델 ---
+langchain
+langchain-core
+langchain-community
+langchain-openai     # GPT 모델 사용 시 필수
+
+# --- 환경 변수 ---
+python-dotenv
+
+# --- MariaDB 연동 ---
+SQLAlchemy==2.0.36
+pymysql               # MariaDB 드라이버
+
+
+
+langchain-chroma        # 벡터 스토어
+chromadb                # 벡터 DB
+sentence-transformers   # 임베딩 모델
+websockets              # 웹소켓 지원 (선택)
+redis                   # 대화 히스토리 저장
+pydantic-settings       # 설정 관리
