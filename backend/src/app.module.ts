@@ -13,7 +13,6 @@ import { SessionModule } from './config/session.module';
 
 import { UsersModule } from './config/users.module';
 import { AssessmentsModule } from './config/assessments.module';
-import { SymptomLogsModule } from './config/symptom-logs.module';
 import { DataCollectorModule } from './config/data-collector.module';
 import { SchedulerModule } from './scheduler/scheduler.module';
 import { SymptomChatModule } from './config/symptom-chat.module';
@@ -34,10 +33,9 @@ import { SymptomChatModule } from './config/symptom-chat.module';
 
     UsersModule,         // 사용자 관리 기능
     AssessmentsModule,   // 의료 평가 관리 기능
-    SymptomLogsModule,   // 증상 로그 및 추천 시스템
     DataCollectorModule, // 데이터 수집 기능
     SchedulerModule,     // 스케줄러 기능
-    SymptomChatModule,   // 증상 분석 챗봇 (WebSocket)
+    SymptomChatModule,   // 증상 분석 챗봇 (WebSocket + FastAPI)
   ],
   controllers: [AppController], // 루트 컨트롤러
   providers: [AppService],      // 루트 서비스

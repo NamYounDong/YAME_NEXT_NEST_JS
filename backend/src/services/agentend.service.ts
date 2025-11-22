@@ -24,8 +24,6 @@ import axios, { AxiosInstance } from 'axios';
 interface AgentendChatRequest {
   session_id: string;
   message: string;
-  user_age?: number;
-  is_pregnant?: boolean;
   location?: {
     latitude: number;
     longitude: number;

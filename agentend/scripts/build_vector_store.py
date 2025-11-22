@@ -63,8 +63,8 @@ def fetch_otc_drugs_from_db(limit: int = None) -> list:
                     UD_DOC_ID,
                     CHART
                 FROM ITEM_DUR_INFO
-                WHERE ETC_OTC_CODE = '02'  -- OTC만
-                  AND CANCEL_NAME IS NULL  -- 취소되지 않은 약품
+                WHERE ETC_OTC_CODE = '일반의약품'
+                AND CANCEL_NAME = '정상'
                 ORDER BY ITEM_NAME
             """
             
@@ -78,11 +78,11 @@ def fetch_otc_drugs_from_db(limit: int = None) -> list:
             # Dictionary로 변환
             drugs = [dict(row._mapping) for row in result]
             
-            logger.info(f"✓ OTC 약품 조회 완료: {len(drugs)}개")
+            logger.info(f"[OK] OTC 약품 조회 완료: {len(drugs)}개")
             return drugs
             
     except Exception as e:
-        logger.error(f"✗ OTC 약품 조회 실패: {str(e)}")
+        logger.error(f"[ERROR] OTC 약품 조회 실패: {str(e)}")
         return []
 
 
@@ -97,19 +97,19 @@ def main():
     # 1. 데이터베이스 연결 확인
     logger.info("1. 데이터베이스 연결 확인...")
     if not db_manager.test_connection():
-        logger.error("✗ 데이터베이스 연결 실패. 환경 변수를 확인하세요.")
+        logger.error("[ERROR] 데이터베이스 연결 실패. 환경 변수를 확인하세요.")
         return
-    logger.info("✓ 데이터베이스 연결 성공")
+    logger.info("[OK] 데이터베이스 연결 성공")
     
     # 2. OTC 약품 데이터 조회
     logger.info("2. OTC 약품 데이터 조회...")
     drugs = fetch_otc_drugs_from_db(limit=None)  # 전체 조회 (테스트 시 limit=100 추천)
     
     if not drugs:
-        logger.error("✗ 조회된 약품이 없습니다.")
+        logger.error("[ERROR] 조회된 약품이 없습니다.")
         return
     
-    logger.info(f"✓ {len(drugs)}개 약품 조회 완료")
+    logger.info(f"[OK] {len(drugs)}개 약품 조회 완료")
     
     # 3. 벡터 스토어 구축
     logger.info("3. 벡터 스토어 구축 중...")
@@ -118,10 +118,10 @@ def main():
     success = vector_store_manager.build_vector_store(drugs)
     
     if not success:
-        logger.error("✗ 벡터 스토어 구축 실패")
+        logger.error("[ERROR] 벡터 스토어 구축 실패")
         return
     
-    logger.info("✓ 벡터 스토어 구축 완료")
+    logger.info("[OK] 벡터 스토어 구축 완료")
     
     # 4. 검색 테스트
     logger.info("4. 검색 테스트...")
@@ -129,12 +129,12 @@ def main():
     results = vector_store_manager.search(test_query, k=5)
     
     if results:
-        logger.info(f"✓ 검색 테스트 성공: '{test_query}' → {len(results)}개 결과")
+        logger.info(f"[OK] 검색 테스트 성공: '{test_query}' -> {len(results)}개 결과")
         logger.info("\n상위 3개 결과:")
         for i, doc in enumerate(results[:3]):
             logger.info(f"  {i+1}. {doc.metadata.get('item_name')} ({doc.metadata.get('entp_name')})")
     else:
-        logger.warning("✗ 검색 결과 없음")
+        logger.warning("[WARNING] 검색 결과 없음")
     
     logger.info("=" * 60)
     logger.info("벡터 스토어 구축 완료!")

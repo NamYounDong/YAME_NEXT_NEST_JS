@@ -2,6 +2,7 @@
  * 챗봇 인터페이스 컴포넌트
  * 
  * WebSocket 기반 대화형 증상 분석 챗봇 UI를 제공합니다.
+ * 메인 화면과 관리자 대시보드의 다크 테마 디자인을 적용했습니다.
  * 
  * 주요 기능:
  * - 실시간 채팅 UI
@@ -14,12 +15,13 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import {
   PaperAirplaneIcon,
-  XMarkIcon,
   SparklesIcon,
   MapPinIcon,
+  CheckCircleIcon,
 } from '@heroicons/react/24/outline';
 import { useChatSocket, ChatMessage } from '../../hooks/useChatSocket';
 
@@ -27,23 +29,19 @@ import { useChatSocket, ChatMessage } from '../../hooks/useChatSocket';
  * Props 인터페이스
  */
 interface ChatBotInterfaceProps {
-  userAge?: number;
-  isPregnant?: boolean;
   location?: { latitude: number; longitude: number };
-  onClose?: () => void;
 }
 
 /**
  * 챗봇 인터페이스 컴포넌트
  */
 export default function ChatBotInterface({
-  userAge,
-  isPregnant,
   location,
-  onClose,
 }: ChatBotInterfaceProps) {
+  const router = useRouter();
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // WebSocket 훅 사용
   const {
@@ -54,8 +52,6 @@ export default function ChatBotInterface({
     selectDisease,
     closeSession,
   } = useChatSocket({
-    userAge,
-    isPregnant,
     location,
   });
 
@@ -65,6 +61,43 @@ export default function ChatBotInterface({
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
+
+  /**
+   * Recommendation 받으면 결과 페이지로 이동
+   */
+  useEffect(() => {
+    // 마지막 메시지 확인
+    const lastMessage = messages[messages.length - 1];
+    
+    if (lastMessage && lastMessage.recommendation) {
+      // 선택한 질환 찾기 (disease_options가 있던 메시지 중 마지막)
+      const diseaseOptionsMessage = messages
+        .slice()
+        .reverse()
+        .find((msg) => msg.diseaseOptions && msg.diseaseOptions.length > 0);
+      
+      if (diseaseOptionsMessage && diseaseOptionsMessage.diseaseOptions) {
+        // 결과 데이터 준비
+        const resultData = {
+          selectedDisease: diseaseOptionsMessage.diseaseOptions.find(
+            (d: any) => lastMessage.recommendation.disease === d.name
+          ) || diseaseOptionsMessage.diseaseOptions[0],
+          recommendation: lastMessage.recommendation,
+        };
+
+        // sessionStorage에 저장
+        sessionStorage.setItem('symptom_result', JSON.stringify(resultData));
+
+        // 소켓 종료 및 세션 정리
+        closeSession();
+
+        // 결과 페이지로 이동 (약간의 딜레이 후)
+        setTimeout(() => {
+          router.push('/symptom-chat/result');
+        }, 500);
+      }
+    }
+  }, [messages, router, closeSession]);
 
   /**
    * 메시지 전송 핸들러
@@ -100,108 +133,76 @@ export default function ChatBotInterface({
     selectDisease(diseaseId);
   };
 
-  /**
-   * 채팅 종료 핸들러
-   */
-  const handleClose = () => {
-    closeSession();
-    if (onClose) {
-      onClose();
-    }
-  };
-
   return (
-    <div className="flex flex-col h-full bg-gradient-to-br from-indigo-50 via-white to-purple-50">
-      {/* 헤더 */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white/80 backdrop-blur-md border-b border-indigo-100">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
-            <SparklesIcon className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h2 className="text-lg font-bold text-gray-900">야메 AI 어시스턴트</h2>
-            <div className="flex items-center space-x-2">
-              {isConnected ? (
-                <>
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-xs text-gray-600">온라인</span>
-                </>
-              ) : (
-                <>
-                  <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  <span className="text-xs text-gray-600">연결 중...</span>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={handleClose}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          title="채팅 종료"
-        >
-          <XMarkIcon className="w-5 h-5 text-gray-600" />
-        </button>
-      </div>
-
-      {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-        {messages.length === 0 && (
-          <div className="text-center py-12">
-            <SparklesIcon className="w-16 h-16 text-indigo-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              안녕하세요! 야메 AI입니다
-            </h3>
-            <p className="text-gray-500">
-              증상을 자유롭게 말씀해주세요.
-            </p>
-          </div>
-        )}
-
-        {messages.map((message) => (
-          <MessageBubble
-            key={message.id}
-            message={message}
-            onSelectDisease={handleSelectDisease}
-          />
-        ))}
-
-        {/* 입력 중 표시 */}
-        {isTyping && (
-          <div className="flex items-start space-x-3">
-            <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
-              <SparklesIcon className="w-5 h-5 text-white" />
-            </div>
-            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-200"></div>
+    <div className="h-full flex flex-col bg-gradient-to-br from-gray-900/50 via-black/50 to-purple-900/50">
+      {/* 메시지 영역 - 스크롤 가능 */}
+      <div 
+        ref={messagesContainerRef}
+        className="flex-1 overflow-y-auto px-4 sm:px-6 py-6"
+      >
+        {/* 메시지가 없을 때 - 중앙 정렬 */}
+        {messages.length === 0 ? (
+          <div className="h-full flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-20 h-20 bg-gradient-to-br from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-purple-500/25">
+                <SparklesIcon className="w-10 h-10 text-white" />
               </div>
+              <h3 className="text-xl font-bold text-white mb-2">
+                안녕하세요! 야메 AI입니다
+              </h3>
+              <p className="text-white/60">
+                어떤 증상이 있으신가요? 편하게 말씀해주세요.
+              </p>
             </div>
           </div>
-        )}
+        ) : (
+          /* 메시지가 있을 때 - 스크롤 가능한 메시지 리스트 */
+          <div className="space-y-4 max-w-5xl mx-auto pb-4">
+            {messages.map((message) => (
+              <MessageBubble
+                key={message.id}
+                message={message}
+                onSelectDisease={handleSelectDisease}
+              />
+            ))}
 
-        <div ref={messagesEndRef} />
+            {/* 입력 중 표시 */}
+            {isTyping && (
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <SparklesIcon className="w-5 h-5 text-white" />
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-2xl px-4 py-3 border border-white/20">
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
+                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                    <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+        )}
       </div>
 
-      {/* 입력 영역 */}
-      <div className="px-6 py-4 bg-white/80 backdrop-blur-md border-t border-indigo-100">
-        <div className="flex items-end space-x-2">
+      {/* 입력 영역 - 하단 고정 (bottom: 0) */}
+      <div className="flex-shrink-0 px-4 sm:px-6 py-4 bg-white/5 backdrop-blur-md border-t border-white/10">
+        <div className="max-w-5xl mx-auto flex items-end space-x-3">
           <textarea
             value={inputMessage}
             onChange={(e) => setInputMessage(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="증상을 입력하세요..."
-            className="flex-1 px-4 py-3 border border-gray-300 rounded-2xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent resize-none"
+            className="flex-1 px-4 py-3 bg-white/10 border border-white/20 text-white placeholder-white/40 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none backdrop-blur-sm max-h-32"
             rows={1}
             disabled={!isConnected}
           />
           <button
             onClick={handleSendMessage}
             disabled={!inputMessage.trim() || !isConnected}
-            className="p-3 bg-indigo-600 text-white rounded-2xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-shrink-0 p-3 bg-gradient-to-r from-purple-600 to-blue-600 text-white rounded-2xl hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all transform hover:scale-105 shadow-lg shadow-purple-500/25"
           >
             <PaperAirplaneIcon className="w-5 h-5" />
           </button>
@@ -232,49 +233,67 @@ function MessageBubble({
     >
       {/* 아바타 */}
       {!isUser && (
-        <div className="w-8 h-8 bg-indigo-500 rounded-full flex items-center justify-center flex-shrink-0">
+        <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center flex-shrink-0 shadow-lg shadow-purple-500/25">
           <SparklesIcon className="w-5 h-5 text-white" />
         </div>
       )}
 
-      <div className={`flex-1 ${isUser ? 'flex justify-end' : ''}`}>
+      <div className={`flex-1 ${isUser ? 'flex flex-col items-end' : ''}`}>
+        {/* 타임스탬프 - 메시지 위 (오른쪽 정렬) */}
+        {isUser && (
+          <div className="text-xs text-white/40 mb-1">
+            {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            })}
+          </div>
+        )}
+        
         {/* 메시지 내용 */}
         <div
-          className={`rounded-2xl px-4 py-3 max-w-md ${
+          className={`rounded-2xl px-4 py-3 max-w-2xl ${
             isUser
-              ? 'bg-indigo-600 text-white'
+              ? 'bg-gradient-to-r from-purple-600 to-blue-600 text-white shadow-lg shadow-purple-500/25'
               : isError
-              ? 'bg-red-100 text-red-900 border border-red-200'
-              : 'bg-white text-gray-900 shadow-sm'
+              ? 'bg-red-500/20 text-red-200 border border-red-500/30 backdrop-blur-sm'
+              : 'bg-white/10 text-white border border-white/20 backdrop-blur-sm'
           }`}
         >
           <p className="whitespace-pre-wrap">{message.content}</p>
 
-          {/* 질환 선택 버튼 */}
+          {/* 질환 선택 버튼 - 버튼 형태로 표시 */}
           {message.diseaseOptions && message.diseaseOptions.length > 0 && (
             <div className="mt-4 space-y-2">
-              <p className="text-sm font-semibold">해당하는 질환을 선택하세요:</p>
-              {message.diseaseOptions.map((disease) => (
-                <button
-                  key={disease.id}
-                  onClick={() => onSelectDisease(disease.id)}
-                  className="w-full text-left px-4 py-3 bg-indigo-50 hover:bg-indigo-100 rounded-xl transition-colors border border-indigo-200"
-                >
-                  <div className="flex justify-between items-center">
-                    <span className="font-medium text-indigo-900">
-                      {disease.name}
-                    </span>
-                    <span className="text-sm text-indigo-600">
-                      {(disease.confidence * 100).toFixed(0)}%
-                    </span>
-                  </div>
-                  {disease.symptoms && disease.symptoms.length > 0 && (
-                    <div className="mt-1 text-xs text-indigo-700">
-                      증상: {disease.symptoms.join(', ')}
+              <p className="text-sm font-semibold text-purple-200 mb-3">
+                해당하는 질환을 선택하세요:
+              </p>
+              <div className="space-y-2">
+                {message.diseaseOptions.map((disease) => (
+                  <button
+                    key={disease.id}
+                    onClick={() => onSelectDisease(disease.id)}
+                    className="w-full text-left px-4 py-3 bg-gradient-to-r from-purple-500/20 to-blue-500/20 hover:from-purple-500/30 hover:to-blue-500/30 rounded-xl transition-all border border-purple-400/30 backdrop-blur-sm transform hover:scale-[1.02]"
+                  >
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="font-semibold text-white text-base">
+                        {disease.name}
+                      </span>
+                      <span className="text-sm font-medium px-2 py-1 bg-purple-500/30 rounded-lg text-purple-200">
+                        {(disease.confidence * 100).toFixed(0)}%
+                      </span>
                     </div>
-                  )}
-                </button>
-              ))}
+                    {disease.symptoms && disease.symptoms.length > 0 && (
+                      <div className="mt-2 text-xs text-white/70">
+                        관련 증상: {disease.symptoms.join(', ')}
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-white/50 mt-3">
+                💡 가장 가까운 증상을 선택하거나, 추가 증상이 있으면 말씀해주세요.
+              </p>
             </div>
           )}
 
@@ -284,13 +303,16 @@ function MessageBubble({
           )}
         </div>
 
-        {/* 타임스탬프 */}
-        <div className={`mt-1 text-xs text-gray-500 ${isUser ? 'text-right' : ''}`}>
-          {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </div>
+        {/* 타임스탬프 - 봇 메시지는 메시지 아래 */}
+        {!isUser && (
+          <div className="mt-1 text-xs text-white/40">
+            {new Date(message.timestamp).toLocaleTimeString('ko-KR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -306,18 +328,21 @@ function RecommendationCard({ recommendation }: { recommendation: any }) {
         {/* 약품 목록 */}
         {recommendation.drugs && recommendation.drugs.length > 0 && (
           <div>
-            <p className="text-sm font-semibold mb-2">💊 추천 약품</p>
+            <p className="text-sm font-semibold mb-2 flex items-center text-blue-200">
+              <CheckCircleIcon className="w-4 h-4 mr-1" />
+              추천 약품
+            </p>
             {recommendation.drugs.map((drug: any, index: number) => (
               <div
                 key={index}
-                className="mb-2 p-3 bg-blue-50 rounded-lg border border-blue-200"
+                className="mb-2 p-3 bg-blue-500/20 rounded-xl border border-blue-400/30 backdrop-blur-sm"
               >
-                <p className="font-medium text-blue-900">{drug.item_name || drug.itemName}</p>
-                <p className="text-xs text-blue-700 mt-1">
+                <p className="font-medium text-blue-200">{drug.item_name || drug.itemName}</p>
+                <p className="text-xs text-blue-300 mt-1">
                   {drug.entp_name || drug.entpName}
                 </p>
                 {drug.recommendation_reason && (
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-blue-200 mt-1">
                     {drug.recommendation_reason}
                   </p>
                 )}
@@ -329,21 +354,21 @@ function RecommendationCard({ recommendation }: { recommendation: any }) {
         {/* 주변 약국 */}
         {recommendation.facilities && recommendation.facilities.length > 0 && (
           <div>
-            <p className="text-sm font-semibold mb-2">🏥 가까운 약국</p>
+            <p className="text-sm font-semibold mb-2 text-green-200">🏥 가까운 약국</p>
             {recommendation.facilities.slice(0, 3).map((facility: any, index: number) => (
               <div
                 key={index}
-                className="mb-2 p-3 bg-green-50 rounded-lg border border-green-200"
+                className="mb-2 p-3 bg-green-500/20 rounded-xl border border-green-400/30 backdrop-blur-sm"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium text-green-900">{facility.name}</p>
-                    <p className="text-xs text-green-700 mt-1">{facility.address}</p>
+                    <p className="font-medium text-green-200">{facility.name}</p>
+                    <p className="text-xs text-green-300 mt-1">{facility.address}</p>
                     {facility.phone && (
-                      <p className="text-xs text-green-600 mt-1">☎ {facility.phone}</p>
+                      <p className="text-xs text-green-200 mt-1">☎ {facility.phone}</p>
                     )}
                   </div>
-                  <div className="flex items-center text-xs text-green-600">
+                  <div className="flex items-center text-xs text-green-200 flex-shrink-0 ml-2">
                     <MapPinIcon className="w-4 h-4 mr-1" />
                     {facility.distance_km?.toFixed(1)}km
                   </div>
@@ -360,11 +385,11 @@ function RecommendationCard({ recommendation }: { recommendation: any }) {
   if (recommendation.type === 'HOSPITAL') {
     return (
       <div className="mt-4 space-y-3">
-        <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-          <p className="text-sm font-semibold text-red-900">
+        <div className="p-3 bg-red-500/20 rounded-xl border border-red-400/30 backdrop-blur-sm">
+          <p className="text-sm font-semibold text-red-200">
             ⚠️ 병원 방문을 권장합니다
           </p>
-          <p className="text-xs text-red-700 mt-1">
+          <p className="text-xs text-red-300 mt-1">
             심각도: {recommendation.severity_score}/10
           </p>
         </div>
@@ -372,21 +397,21 @@ function RecommendationCard({ recommendation }: { recommendation: any }) {
         {/* 주변 병원 */}
         {recommendation.facilities && recommendation.facilities.length > 0 && (
           <div>
-            <p className="text-sm font-semibold mb-2">🏥 가까운 병원</p>
+            <p className="text-sm font-semibold mb-2 text-orange-200">🏥 가까운 병원</p>
             {recommendation.facilities.slice(0, 3).map((facility: any, index: number) => (
               <div
                 key={index}
-                className="mb-2 p-3 bg-orange-50 rounded-lg border border-orange-200"
+                className="mb-2 p-3 bg-orange-500/20 rounded-xl border border-orange-400/30 backdrop-blur-sm"
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-medium text-orange-900">{facility.name}</p>
-                    <p className="text-xs text-orange-700 mt-1">{facility.address}</p>
+                    <p className="font-medium text-orange-200">{facility.name}</p>
+                    <p className="text-xs text-orange-300 mt-1">{facility.address}</p>
                     {facility.phone && (
-                      <p className="text-xs text-orange-600 mt-1">☎ {facility.phone}</p>
+                      <p className="text-xs text-orange-200 mt-1">☎ {facility.phone}</p>
                     )}
                   </div>
-                  <div className="flex items-center text-xs text-orange-600">
+                  <div className="flex items-center text-xs text-orange-200 flex-shrink-0 ml-2">
                     <MapPinIcon className="w-4 h-4 mr-1" />
                     {facility.distance_km?.toFixed(1)}km
                   </div>
@@ -401,4 +426,3 @@ function RecommendationCard({ recommendation }: { recommendation: any }) {
 
   return null;
 }
-

@@ -62,9 +62,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
     this.pool = mariadb.createPool({
       host: this.configService.get<string>('DB_HOST', 'localhost'),
       port: this.configService.get<number>('DB_PORT', 3306),
-      user: this.configService.get<string>('DB_USERNAME', 'root'),
+      user: this.configService.get<string>('DB_USER', 'root'),
       password: this.configService.get<string>('DB_PASSWORD', 'password'),
-      database: this.configService.get<string>('DB_DATABASE', 'yame'),
+      database: this.configService.get<string>('DB_NAME', 'yame'),
       connectionLimit: 10,    // 최대 연결 수
       acquireTimeout: 30000,  // 연결 획득 타임아웃 (30초)
       queryTimeout: 30000,    // 쿼리 실행 타임아웃 (30초)

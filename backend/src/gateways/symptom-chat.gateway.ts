@@ -117,8 +117,6 @@ export class SymptomChatGateway
     @MessageBody() payload: {
       sessionId: string;
       message: string;
-      userAge?: number;
-      isPregnant?: boolean;
       location?: { latitude: number; longitude: number };
     },
   ) {
@@ -130,12 +128,10 @@ export class SymptomChatGateway
       // 클라이언트에게 "입력 중..." 표시
       client.emit('bot_typing', { sessionId: payload.sessionId });
 
-      // FastAPI (agentend)로 메시지 전달
+      // FastAPI (agentend)로 메시지 전달 (나이/임신 정보는 제외, 필요 시 챗봇이 물어봄)
       const response = await this.agentendService.sendMessage({
         session_id: payload.sessionId,
         message: payload.message,
-        user_age: payload.userAge,
-        is_pregnant: payload.isPregnant,
         location: payload.location,
       });
 

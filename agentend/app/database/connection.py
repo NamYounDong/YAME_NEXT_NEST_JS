@@ -14,7 +14,7 @@ from sqlalchemy.pool import QueuePool
 from contextlib import contextmanager
 from typing import Generator
 import logging
-
+import urllib.parse
 from app.config import settings
 
 # 로거 설정
@@ -62,9 +62,11 @@ class DatabaseManager:
         - pool_pre_ping: 연결 상태 자동 체크
         """
         try:
+            encoded_password = urllib.parse.quote_plus(settings.DB_PASSWORD)
+
             # 연결 문자열 생성
             db_url = (
-                f"mysql+pymysql://{settings.DB_USER}:{settings.DB_PASSWORD}"
+                f"mysql+pymysql://{settings.DB_USER}:{encoded_password}"
                 f"@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
                 f"?charset={settings.DB_CHARSET}"
             )

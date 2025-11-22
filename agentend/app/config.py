@@ -13,7 +13,6 @@ Pydantic의 BaseSettings를 사용하여 타입 안전성과 검증을 보장합
 from pydantic_settings import BaseSettings
 from typing import Optional
 
-
 class Settings(BaseSettings):
     """
     애플리케이션 설정 클래스
@@ -33,14 +32,14 @@ class Settings(BaseSettings):
     DB_HOST: str = "localhost"
     DB_PORT: int = 3306
     DB_USER: str = "root"
-    DB_PASSWORD: str
+    DB_PASSWORD: str = "password"
     DB_NAME: str = "yame"
     DB_CHARSET: str = "utf8mb4"
     
     # --- Redis 연결 정보 ---
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
-    REDIS_PASSWORD: Optional[str] = None  # 비밀번호 없을 수 있음
+    REDIS_PASSWORD: Optional[str] = None
     REDIS_DB: int = 1  # DB 0은 NestJS 세션용, DB 1은 챗봇용
     REDIS_SESSION_TTL: int = 3600  # 1시간 (초 단위)
     

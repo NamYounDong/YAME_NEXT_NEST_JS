@@ -1,95 +1,310 @@
 # YAME Frontend
 
-Next.js 기반의 의료 평가 시스템 프론트엔드
+**Next.js 14 기반 프론트엔드 - 대화형 증상 분석 챗봇 UI**
 
-> 🤖 **2024.12 LLM RAG 증상 분석**: GPT-4o와 DUR 데이터를 활용한 지능형 증상 분석 및 약품 추천 시스템
-> 🔄 **2025.01 API 통신 최적화**: camelCase/snake_case 자동 변환으로 프론트엔드-백엔드 데이터 호환성 개선
+## 🎯 개요
 
-## 🚀 구현된 주요 기능
+YAME Frontend는 사용자가 AI 챗봇과 실시간으로 대화하며 증상을 분석하고 약품 추천을 받을 수 있는 다크 테마 기반의 웹 인터페이스입니다.
 
-### 💬 WebSocket 기반 대화형 증상 분석 (핵심 기능) ⭐ NEW
-- ✅ **실시간 채팅 UI**: Socket.IO를 통한 양방향 통신
-- ✅ **대화형 증상 수집**: 챗봇이 자연스럽게 질문하며 정보 수집
-- ✅ **질환 선택 버튼**: LLM이 추론한 질환을 버튼으로 선택
-- ✅ **약품/병원 추천**: 선택한 질환에 맞는 추천 결과 표시
-- ✅ **자동 스크롤**: 새 메시지 시 자동으로 스크롤
-- ✅ **로딩 상태**: 챗봇 입력 중 애니메이션 표시
-- ✅ **세션 관리**: 채팅 종료 시 자동 메모리 해제
-- ✅ **재연결 처리**: 연결 끊김 시 자동 재연결
+## 💻 기술 스택
 
-### UI/UX
-- ✅ **반응형 디자인**: 모바일, 태블릿, 데스크톱 최적화
-- ✅ **모던 UI**: Tailwind CSS 기반 깔끔한 디자인
-- ✅ **직관적인 증상 입력**: 자동완성 및 부가 증상 선택
-- ✅ **실시간 피드백**: 로딩 상태 및 진행 표시
-- ✅ **접근성**: WCAG 가이드라인 준수
-- ✅ **GPS 권한 관리**: 위치 권한 요청 및 fallback 처리
+### 프레임워크 & 라이브러리
+- **Next.js 14** (App Router)
+- **React 18**
+- **TypeScript**
 
-### 인증 시스템
-- ✅ **세션 기반 인증**: 백엔드 세션과 연동
-- ✅ **JWT 지원**: 토큰 기반 로그인/로그아웃
-- ✅ **자동 로그인**: 세션 저장 및 자동 인증 상태 유지
-- ✅ **역할별 접근**: 환자, 의사, 관리자 권한 관리
-- ✅ **보안 쿠키**: HttpOnly 쿠키로 세션 저장
+### 스타일링
+- **Tailwind CSS** (유틸리티 우선 CSS)
+- **다크 테마**: 그라데이션 배경 + 반투명 블러 효과
+- **Heroicons** (아이콘)
+
+### 통신
+- **Socket.IO Client** (WebSocket 실시간 통신)
+- **Axios** (선택적 HTTP 요청)
 
 ### 상태 관리
-- ✅ **React Query**: 서버 상태 캐싱 및 동기화
-- ✅ **Context API**: 전역 상태 관리 (인증, 테마 등)
-- ✅ **캐시 최적화**: 불필요한 API 호출 최소화
-- ✅ **낙관적 업데이트**: 빠른 사용자 경험
+- **React Hooks** (useState, useEffect, useCallback, useRef)
+- **Custom Hook**: `useChatSocket` (챗봇 로직 캡슐화)
 
-### 폼 관리
-- ✅ **React Hook Form**: 고성능 폼 라이브러리
-- ✅ **Zod Validation**: 타입 안전한 폼 검증
-- ✅ **실시간 검증**: 사용자 입력 중 즉시 피드백
-- ✅ **에러 처리**: 친화적인 에러 메시지 표시
+### UI/UX
+- **React Hot Toast** (알림)
+- **자동 스크롤** (메시지 추가 시)
+- **타이핑 애니메이션**
 
-### 페이지 구성
-- ✅ **홈페이지**: 서비스 소개 및 기능 안내
-- ✅ **증상 분석**: LLM 기반 증상 입력 및 분석 결과 ⭐ NEW
-- ✅ **약품 추천**: AI 추천 약품 상세 정보 표시 ⭐ NEW
-- ✅ **시설 안내**: 지도 및 주변 약국/병원 정보 ⭐ NEW
-- ✅ **인증 페이지**: 로그인/회원가입 폼
-- ✅ **대시보드**: 사용자별 맞춤 인터페이스
-- ✅ **이력 조회**: 과거 증상 분석 이력 확인
+## 📁 프로젝트 구조
 
-## 기술 스택
+```
+frontend/
+├── src/
+│   ├── app/                          # Next.js App Router
+│   │   ├── page.tsx                  # 메인 페이지
+│   │   ├── layout.tsx                # 루트 레이아웃
+│   │   ├── globals.css               # 글로벌 스타일
+│   │   ├── symptom-chat/            # 챗봇 페이지
+│   │   │   ├── page.tsx              # 챗봇 인터페이스
+│   │   │   └── result/               # 결과 페이지
+│   │   │       └── page.tsx
+│   │   └── admin/                    # 관리자 대시보드
+│   │
+│   ├── components/
+│   │   ├── chatbot/
+│   │   │   └── ChatBotInterface.tsx  # 챗봇 UI 컴포넌트
+│   │   └── admin/
+│   │
+│   ├── hooks/
+│   │   └── useChatSocket.ts          # WebSocket 통신 훅
+│   │
+│   └── types/
+│       └── chat.ts                   # 타입 정의
+│
+├── public/
+├── tailwind.config.ts
+├── tsconfig.json
+├── next.config.js
+└── package.json
+```
 
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **WebSocket**: Socket.IO Client ⭐ NEW
-- **State Management**: React Hooks (useState, useEffect)
-- **HTTP Client**: Axios
-- **Maps**: VWorld API, Leaflet
-- **Geolocation**: Browser Geolocation API
-- **Icons**: Heroicons
-- **Notifications**: React Hot Toast
-- **Authentication**: Session + JWT
+## 🔧 핵심 기능 및 동작 원리
 
-## 설치 및 실행
+### 1. WebSocket 통신 (`useChatSocket` Hook)
 
-### 사전 요구사항
-- Node.js 18+
-- npm
+**목적**: Socket.IO 연결 관리, 메시지 송수신, 상태 관리
 
-### 설치
+**주요 기능**:
+```typescript
+const {
+  messages,        // 채팅 메시지 배열
+  isConnected,     // 연결 상태
+  isTyping,        // 챗봇 입력 중
+  sendMessage,     // 메시지 전송
+  selectDisease,   // 질환 선택
+  closeSession,    // 세션 종료
+} = useChatSocket({
+  location: { latitude, longitude }
+});
+```
+
+**동작 흐름**:
+```
+1. Socket.IO 연결 (useEffect)
+   → Backend WebSocket Gateway 연결
+   
+2. 이벤트 리스너 등록
+   - connect: 연결 성공
+   - receive_message: 챗봇 응답 수신
+   - disconnect: 연결 종료
+   
+3. 메시지 전송 (sendMessage)
+   → socket.emit('send_message', { message })
+   → Backend → Agentend → Backend
+   → socket.on('receive_message', response)
+   
+4. 질환 선택 (selectDisease)
+   → socket.emit('select_disease', { disease_id })
+   → 약품/병원 추천 수신
+   
+5. 세션 종료 (closeSession)
+   → socket.emit('close_session')
+   → Redis 메모리 해제
+```
+
+### 2. 챗봇 UI (`ChatBotInterface`)
+
+**레이아웃 구조**:
+```tsx
+<div className="h-full flex flex-col">
+  {/* 환영 메시지 (메시지 없을 때만) */}
+  {messages.length === 0 && <WelcomeMessage />}
+  
+  {/* 메시지 영역 (스크롤 가능) */}
+  <div className="flex-1 overflow-y-auto">
+    {messages.map(message => (
+      <MessageBubble message={message} />
+    ))}
+    <div ref={messagesEndRef} />
+  </div>
+  
+  {/* 입력 영역 (고정) */}
+  <div className="flex-shrink-0">
+    <InputArea />
+  </div>
+</div>
+```
+
+**다크 테마 스타일**:
+```css
+/* 배경 */
+background: linear-gradient(to-br, 
+  rgba(17, 24, 39, 0.5),   /* gray-900/50 */
+  rgba(0, 0, 0, 0.5),       /* black/50 */
+  rgba(88, 28, 135, 0.5)    /* purple-900/50 */
+);
+backdrop-filter: blur(8px);
+
+/* 사용자 메시지 */
+background: linear-gradient(to-right, #9333ea, #3b82f6);
+box-shadow: 0 0 25px rgba(147, 51, 234, 0.25);
+
+/* 챗봇 메시지 */
+background: rgba(255, 255, 255, 0.1);
+border: 1px solid rgba(255, 255, 255, 0.2);
+backdrop-filter: blur(4px);
+```
+
+### 3. 메시지 타입별 렌더링
+
+**텍스트 메시지**:
+```tsx
+{message.messageType === 'text' && (
+  <p className="whitespace-pre-wrap">
+    {message.content}
+  </p>
+)}
+```
+
+**질환 선택 버튼**:
+```tsx
+{message.diseaseOptions && (
+  <div className="space-y-2">
+    {options.map(disease => (
+      <button onClick={() => selectDisease(disease.id)}>
+        <span>{disease.name}</span>
+        <span>{(disease.confidence * 100).toFixed(0)}%</span>
+        <span>관련 증상: {disease.symptoms.join(', ')}</span>
+      </button>
+    ))}
+  </div>
+)}
+```
+
+**약품/병원 추천 카드**:
+```tsx
+{message.recommendation && (
+  <RecommendationCard>
+    {/* 약품 리스트 */}
+    {recommendation.drugs?.map(drug => (
+      <DrugCard drug={drug} />
+    ))}
+    
+    {/* 약국/병원 리스트 */}
+    {recommendation.facilities?.map(facility => (
+      <FacilityCard facility={facility} />
+    ))}
+  </RecommendationCard>
+)}
+```
+
+### 4. 자동 스크롤
+
+```typescript
+const messagesEndRef = useRef<HTMLDivElement>(null);
+
+// 새 메시지 추가 시 자동 스크롤
+useEffect(() => {
+  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+}, [messages, isTyping]);
+```
+
+### 5. 결과 페이지 (`symptom-chat/result/page.tsx`)
+
+**데이터 전달**:
+```typescript
+// ChatBotInterface에서 recommendation 수신 시
+useEffect(() => {
+  if (lastMessage?.recommendation) {
+    // sessionStorage에 결과 저장
+    sessionStorage.setItem('symptom_result', JSON.stringify({
+      selectedDisease,
+      recommendation,
+    }));
+    
+    // 세션 종료
+    closeSession();
+    
+    // 결과 페이지로 이동
+    router.push('/symptom-chat/result');
+  }
+}, [messages]);
+
+// result/page.tsx에서 데이터 로드
+useEffect(() => {
+  const storedResult = sessionStorage.getItem('symptom_result');
+  if (storedResult) {
+    setResult(JSON.parse(storedResult));
+    sessionStorage.removeItem('symptom_result');
+  }
+}, []);
+```
+
+## 📡 Backend 연동
+
+### WebSocket 이벤트
+
+| 이벤트 | 방향 | 데이터 | 설명 |
+|--------|------|--------|------|
+| `connect` | Client → Server | - | 연결 시작 |
+| `send_message` | Client → Server | `{ message }` | 사용자 메시지 전송 |
+| `receive_message` | Server → Client | `{ message, message_type, ... }` | 챗봇 응답 수신 |
+| `select_disease` | Client → Server | `{ disease_id }` | 질환 선택 |
+| `close_session` | Client → Server | `{ session_id }` | 세션 종료 |
+| `disconnect` | Client → Server | - | 연결 종료 |
+
+### 메시지 응답 형식
+
+**텍스트 메시지**:
+```json
+{
+  "message": "언제부터 증상이 시작되었나요?",
+  "message_type": "text",
+  "timestamp": "2024-01-01T12:00:00Z"
+}
+```
+
+**질환 선택지**:
+```json
+{
+  "message": "증상을 분석한 결과입니다.",
+  "message_type": "disease_options",
+  "disease_options": [
+    {
+      "id": "disease_1",
+      "name": "감기",
+      "confidence": 0.85,
+      "symptoms": ["두통", "발열"]
+    }
+  ]
+}
+```
+
+**추천 결과**:
+```json
+{
+  "message": "**감기** 추천 약품:\n...",
+  "message_type": "recommendation",
+  "recommendation": {
+    "type": "PHARMACY",
+    "severity_score": 4,
+    "disease": "감기",
+    "drugs": [...],
+    "facilities": [...]
+  }
+}
+```
+
+## 🛠 설치 및 실행
+
+### 1. 패키지 설치
 ```bash
 npm install
 ```
 
-### 환경 변수 설정
-`.env.local` 파일을 생성하고 다음과 같이 설정:
-
+### 2. 환경 변수 설정
+`.env.local` 파일 생성:
 ```env
-# Backend API URL
 NEXT_PUBLIC_API_URL=http://localhost:3001
-
-# VWorld API (지도 표시용, 선택사항)
-NEXT_PUBLIC_VWORLD_API_KEY=your-vworld-api-key
 ```
 
-### 실행
+### 3. 실행
 ```bash
 # 개발 모드
 npm run dev
@@ -100,415 +315,52 @@ npm run build
 # 운영 모드
 npm run start
 
-# 린트 검사
+# 린트
 npm run lint
 ```
 
-## 📱 증상 분석 워크플로우
+### 4. 접속
+http://localhost:3000
 
-### 1. 증상 입력 화면
-```
-┌─────────────────────────────────┐
-│ 어떤 증상이 있으신가요?          │
-│ ┌────────────────────────────┐  │
-│ │ 머리가 아프고 열이 나요...  │  │
-│ └────────────────────────────┘  │
-│                                  │
-│ 추가 증상이 있나요? (선택)      │
-│ ☑ 기침  ☑ 코막힘  ☐ 설사      │
-│                                  │
-│ 나이: [35]  ☐ 임신 중           │
-│                                  │
-│ [위치 정보 사용 동의] ✓          │
-│                                  │
-│        [분석하기]                │
-└─────────────────────────────────┘
-```
+**실행 순서**:
+1. MariaDB, Redis 실행
+2. Agentend 실행 (http://127.0.0.1:8000)
+3. Backend 실행 (http://localhost:3001)
+4. **Frontend 실행** (http://localhost:3000)
 
-### 2. 분석 중 화면
-```
-┌─────────────────────────────────┐
-│  🤖 AI가 증상을 분석 중...      │
-│                                  │
-│  ⏳ 의학 용어로 변환 중...       │
-│  ⏳ 질병 추론 중...              │
-│  ⏳ 약품 검색 중...              │
-│  ⏳ 주변 시설 검색 중...         │
-│                                  │
-│  [━━━━━━━━━━] 80%              │
-└─────────────────────────────────┘
-```
+## 🎨 UI/UX 특징
 
-### 3. 분석 결과 화면
-```
-┌─────────────────────────────────┐
-│ 📋 분석 결과                     │
-│                                  │
-│ 의학 용어: 두통, 발열, 기침      │
-│ 추정 질병: 감기 (85%), 독감 (60%)│
-│ 심각도: 경증 (4/10)              │
-│                                  │
-│ 💊 추천 약품                     │
-│ ┌────────────────────────────┐  │
-│ │ 타이레놀정 500mg            │  │
-│ │ 제조: 한국존슨앤드존슨       │  │
-│ │ 효과: 두통, 발열 완화        │  │
-│ └────────────────────────────┘  │
-│                                  │
-│ 🏥 가까운 약국                   │
-│ ┌────────────────────────────┐  │
-│ │ 📍 서울약국 (500m)          │  │
-│ │ 서울시 종로구...             │  │
-│ │ ☎ 02-1234-5678              │  │
-│ │ 🕐 운영 중 (09:00-22:00)    │  │
-│ │ [지도보기] [길찾기]          │  │
-│ └────────────────────────────┘  │
-│                                  │
-│ 💬 안내 메시지                   │
-│ 일반 의약품으로 증상 완화가      │
-│ 가능합니다. 가까운 약국을        │
-│ 방문하세요.                      │
-└─────────────────────────────────┘
-```
+### 다크 테마 컬러
+- **배경**: `from-gray-900/50 via-black/50 to-purple-900/50`
+- **사용자 메시지**: `from-purple-600 to-blue-600`
+- **챗봇 메시지**: `bg-white/10 border-white/20`
+- **버튼**: `from-purple-500/20 to-blue-500/20`
 
-## 📁 프로젝트 구조
+### 반응형 디자인
+- **Mobile** (< 640px): 전체 너비
+- **Tablet** (640-1024px): 중앙 정렬
+- **Desktop** (> 1024px): 최대 너비 제한
 
-```
-src/
-├── app/                          # App Router 페이지
-│   ├── layout.tsx               # 루트 레이아웃
-│   ├── page.tsx                 # 홈 페이지
-│   ├── globals.css              # 글로벌 스타일
-│   ├── auth/                    # 인증 페이지
-│   │   ├── login/
-│   │   │   └── page.tsx         # 로그인 페이지
-│   │   └── register/
-│   │       └── page.tsx         # 회원가입 페이지
-│   ├── symptom-check/           # 증상 분석 ⭐ NEW
-│   │   ├── page.tsx             # 증상 입력 페이지
-│   │   ├── result/
-│   │   │   └── page.tsx         # 분석 결과 페이지
-│   │   └── history/
-│   │       └── page.tsx         # 분석 이력 페이지
-│   └── dashboard/               # 대시보드
-│       └── page.tsx             # 사용자 대시보드
-│
-├── components/                  # 재사용 가능한 컴포넌트
-│   ├── providers.tsx            # 컨텍스트 프로바이더
-│   ├── ui/                      # UI 컴포넌트
-│   │   ├── Button.tsx
-│   │   ├── Input.tsx
-│   │   ├── Card.tsx
-│   │   ├── Modal.tsx
-│   │   └── LoadingSpinner.tsx
-│   ├── symptom/                 # 증상 분석 컴포넌트 ⭐ NEW
-│   │   ├── SymptomInput.tsx     # 증상 입력 폼
-│   │   ├── AnalysisResult.tsx   # 분석 결과 표시
-│   │   ├── DrugCard.tsx         # 약품 카드
-│   │   ├── FacilityCard.tsx     # 시설 카드
-│   │   └── MapView.tsx          # 지도 뷰
-│   ├── forms/                   # 폼 컴포넌트
-│   │   ├── LoginForm.tsx
-│   │   └── RegisterForm.tsx
-│   └── layout/                  # 레이아웃 컴포넌트
-│       ├── Header.tsx
-│       ├── Footer.tsx
-│       └── Navigation.tsx
-│
-├── contexts/                    # React Context
-│   ├── auth-context.tsx         # 인증 컨텍스트
-│   └── symptom-context.tsx      # 증상 분석 컨텍스트 ⭐ NEW
-│
-├── services/                    # API 서비스
-│   ├── api.ts                   # Axios 인스턴스
-│   ├── auth.ts                  # 인증 서비스
-│   ├── users.ts                 # 사용자 API
-│   ├── symptom-analysis.ts      # 증상 분석 API ⭐ NEW
-│   └── assessments.ts           # 평가 API
-│
-├── types/                       # TypeScript 타입 정의
-│   ├── user.ts
-│   ├── symptom.ts               # 증상 관련 타입 ⭐ NEW
-│   ├── drug.ts                  # 약품 관련 타입 ⭐ NEW
-│   ├── facility.ts              # 시설 관련 타입 ⭐ NEW
-│   ├── assessment.ts
-│   └── common.ts
-│
-├── hooks/                       # 커스텀 훅
-│   ├── useAuth.ts
-│   ├── useGeolocation.ts        # GPS 위치 훅 ⭐ NEW
-│   ├── useSymptomAnalysis.ts    # 증상 분석 훅 ⭐ NEW
-│   └── useApi.ts
-│
-└── utils/                       # 유틸리티 함수
-    ├── api.ts
-    ├── validation.ts
-    ├── geolocation.ts           # 위치 계산 ⭐ NEW
-    ├── dateFormatter.ts
-    └── constants.ts
-```
+### 애니메이션
+- 메시지 추가: Fade in
+- 버튼 호버: Scale + Gradient
+- 타이핑 중: Pulse animation
 
-## 🎨 UI/UX 설계
+## 🔒 보안
 
-### 증상 분석 페이지 디자인
-
-#### 컬러 코딩
-```css
-/* Severity Colors */
---severity-low: #10b981;      /* 경증: 녹색 */
---severity-medium: #f59e0b;   /* 중등도: 주황 */
---severity-high: #ef4444;     /* 중증: 빨강 */
-
-/* Status Colors */
---open: #10b981;              /* 운영 중: 녹색 */
---closed: #6b7280;            /* 마감: 회색 */
-```
-
-#### 반응형 레이아웃
-- **Mobile**: 세로 스크롤, 전체 화면 지도
-- **Tablet**: 2열 그리드, 사이드 지도
-- **Desktop**: 3열 그리드, 고정 사이드바 지도
-
-## 🔐 인증 및 권한
-
-### 세션 기반 인증
-```typescript
-// 인증 컨텍스트 사용
-const { user, login, logout, loading } = useAuth();
-
-// 증상 분석 (비회원 가능)
-<SymptomCheckPage /> // 로그인 불필요
-
-// 이력 조회 (회원 전용)
-<SymptomHistoryPage /> // 로그인 필요
-```
-
-## 📊 API 연동
-
-### 증상 분석 API 호출
-```typescript
-// utils/api.ts - camelCase/snake_case 자동 변환
-export const symptomApi = {
-  analyzeSymptom: (symptomData: any) => {
-    // 프론트엔드 snake_case → 백엔드 camelCase 변환
-    const backendData = {
-      symptomText: symptomData.symptom_text,
-      subSymptoms: symptomData.sub_symptoms,
-      latitude: symptomData.gps_point?.lat,
-      longitude: symptomData.gps_point?.lng,
-      gpsAccuracy: symptomData.gps_accuracy_m,
-      userAge: symptomData.user_age,
-      isPregnant: symptomData.is_pregnant,
-    };
-    
-    return api.post('/api/symptom-logs/analyze', backendData, {
-      loadingMessage: 'AI가 증상을 분석하고 있습니다...',
-      timeout: 45000, // 45초 타임아웃
-    });
-  },
-};
-
-// 컴포넌트에서 사용
-const handleAnalyze = async (formData) => {
-  try {
-    // 프론트엔드 형식으로 데이터 준비 (snake_case)
-    const requestData = {
-      symptom_text: formData.symptoms,
-      sub_symptoms: formData.additionalSymptoms,
-      gps_point: { 
-        lat: location.latitude, 
-        lng: location.longitude 
-      },
-      gps_accuracy_m: location.accuracy,
-      user_age: formData.age,
-      is_pregnant: formData.isPregnant,
-    };
-    
-    // API 호출 (자동으로 camelCase로 변환됨)
-    const result = await symptomApi.analyzeSymptom(requestData);
-    toast.success('증상 분석이 완료되었습니다!');
-  } catch (error) {
-    toast.error('증상 분석에 실패했습니다.');
-  }
-};
-```
-
-## 🗺️ 위치 기반 기능
-
-### GPS 권한 요청
-```typescript
-// hooks/useGeolocation.ts
-export function useGeolocation() {
-  const [location, setLocation] = useState<Coordinates | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const requestLocation = useCallback(() => {
-    if (!navigator.geolocation) {
-      setError('위치 서비스를 사용할 수 없습니다.');
-      return;
-    }
-
-    setLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-        });
-        setLoading(false);
-      },
-      (error) => {
-        setError('위치 정보를 가져올 수 없습니다.');
-        setLoading(false);
-      }
-    );
-  }, []);
-
-  return { location, error, loading, requestLocation };
-}
-```
-
-### 지도 표시
-```typescript
-// components/symptom/MapView.tsx
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
-
-export function MapView({ facilities }: { facilities: Facility[] }) {
-  return (
-    <MapContainer center={[37.5665, 126.9780]} zoom={15}>
-      <TileLayer
-        url="https://api.vworld.kr/req/wmts/1.0.0/{apikey}/Base/{z}/{y}/{x}.png"
-        attribution="&copy; VWorld"
-      />
-      {facilities.map((facility) => (
-        <Marker key={facility.id} position={[facility.lat, facility.lng]}>
-          <Popup>
-            <strong>{facility.name}</strong>
-            <p>{facility.address}</p>
-            <button onClick={() => copyAddress(facility.address)}>
-              주소 복사
-            </button>
-          </Popup>
-        </Marker>
-      ))}
-    </MapContainer>
-  );
-}
-```
-
-## 🚀 성능 최적화
-
-### 코드 스플리팅
-```typescript
-// 지도 컴포넌트 동적 로드 (용량 절감)
-const MapView = dynamic(() => import('@/components/symptom/MapView'), {
-  loading: () => <MapSkeleton />,
-  ssr: false, // 클라이언트 전용
-});
-```
-
-### 이미지 최적화
-```typescript
-import Image from 'next/image';
-
-<Image
-  src="/drug-icon.png"
-  alt="약품 아이콘"
-  width={64}
-  height={64}
-  priority={false}
-  loading="lazy"
-/>
-```
-
-### API 호출 최적화
-- **자동 변환**: snake_case ↔ camelCase 자동 변환으로 수동 변환 불필요
-- **타임아웃 설정**: LLM 분석은 45초, 일반 API는 10초
-- **로딩 상태**: 전역 로딩 오버레이로 사용자 경험 개선
-- **에러 핸들링**: 친화적인 에러 메시지 표시
-
-## 🧪 테스트
-
-### 증상 분석 플로우 테스트
-```typescript
-// __tests__/symptom-check.test.tsx
-describe('증상 분석 플로우', () => {
-  it('증상 입력 후 분석 결과 표시', async () => {
-    render(<SymptomCheckPage />);
-    
-    // 증상 입력
-    fireEvent.change(screen.getByPlaceholderText('증상을 입력하세요'), {
-      target: { value: '머리가 아프고 열이 나요' }
-    });
-    
-    // 분석 버튼 클릭
-    fireEvent.click(screen.getByText('분석하기'));
-    
-    // 결과 대기
-    await waitFor(() => {
-      expect(screen.getByText('분석 결과')).toBeInTheDocument();
-    });
-    
-    // 추천 약품 확인
-    expect(screen.getByText(/타이레놀/)).toBeInTheDocument();
-  });
-});
-```
-
-## 🚀 배포
-
-### Vercel 배포 (권장)
-```bash
-# Vercel CLI 설치
-npm i -g vercel
-
-# 프로젝트 배포
-vercel
-
-# 환경 변수 설정
-vercel env add NEXT_PUBLIC_API_URL
-```
-
-### 환경별 설정
-- **개발**: `NODE_ENV=development`
-- **스테이징**: `NODE_ENV=staging`
-- **운영**: `NODE_ENV=production`
-
-## 🤝 기여 가이드
-
-1. **코딩 스타일**: ESLint + Prettier 규칙 준수
-2. **컴포넌트**: 재사용 가능한 작은 단위로 작성
-3. **타입 안정성**: TypeScript 엄격 모드 사용
-4. **테스트**: 중요한 컴포넌트는 테스트 코드 작성
-5. **문서화**: JSDoc 주석 및 README 업데이트
-6. **API 통신**: utils/api.ts의 변환 로직 사용 (수동 변환 금지)
-
-## 🐛 문제 해결
-
-### API 400 Bad Request 에러
-**증상**: 증상 분석 API 호출 시 400 에러 발생
-
-**원인**: 프론트엔드의 snake_case 필드명과 백엔드의 camelCase 필드명 불일치
-
-**해결**: `utils/api.ts`의 `symptomApi.analyzeSymptom` 메서드가 자동으로 변환합니다.
-
-```typescript
-// ❌ 잘못된 방법 (직접 호출)
-api.post('/api/symptom-logs/analyze', {
-  symptom_text: '머리 아파요', // 백엔드는 symptomText를 기대
-  gps_point: { lat: 37.5, lng: 126.9 } // 백엔드는 latitude, longitude를 기대
-});
-
-// ✅ 올바른 방법 (변환 함수 사용)
-symptomApi.analyzeSymptom({
-  symptom_text: '머리 아파요',
-  gps_point: { lat: 37.5, lng: 126.9 }
-});
-// → 자동으로 { symptomText: '...', latitude: 37.5, longitude: 126.9 }로 변환됨
-```
+- ✅ WebSocket Only (REST API 최소 사용)
+- ✅ XSS 방지 (React 자동 이스케이프)
+- ✅ CORS (Backend에서 도메인 제한)
+- ✅ sessionStorage (임시 데이터 저장)
 
 ## 📝 라이선스
 
-Copyright © 2024 YAME Project
+MIT License
+
+---
+
+**💡 사용 팁**:
+- 구체적으로 증상을 설명하세요
+- 챗봇의 질문에 자세히 답변하세요
+- 의심 질환 중 가장 가까운 것을 선택하세요
+- 증상이 심각하면 즉시 병원을 방문하세요

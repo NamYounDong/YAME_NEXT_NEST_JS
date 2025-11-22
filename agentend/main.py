@@ -26,6 +26,7 @@ import sys
 from app.config import settings
 from app.database.connection import db_manager
 from app.database.redis_manager import redis_manager
+from app.rag.vector_store import vector_store_manager
 from app.models.chat import HealthCheckResponse
 
 # 로깅 설정
@@ -61,24 +62,36 @@ async def lifespan(app: FastAPI):
     # MariaDB 연결 테스트
     try:
         if db_manager.test_connection():
-            logger.info("✓ MariaDB 연결 성공")
+            logger.info("[OK] MariaDB 연결 성공")
         else:
-            logger.error("✗ MariaDB 연결 실패")
+            logger.error("[ERROR] MariaDB 연결 실패")
             raise Exception("데이터베이스 연결 실패")
     except Exception as e:
-        logger.error(f"✗ MariaDB 연결 오류: {str(e)}")
+        logger.error(f"[ERROR] MariaDB 연결 오류: {str(e)}")
         raise
     
     # Redis 연결 테스트
     try:
         if redis_manager.test_connection():
-            logger.info("✓ Redis 연결 성공")
+            logger.info("[OK] Redis 연결 성공")
         else:
-            logger.error("✗ Redis 연결 실패")
+            logger.error("[ERROR] Redis 연결 실패")
             raise Exception("Redis 연결 실패")
     except Exception as e:
-        logger.error(f"✗ Redis 연결 오류: {str(e)}")
+        logger.error(f"[ERROR] Redis 연결 오류: {str(e)}")
         raise
+    
+    # 벡터 스토어 로드
+    try:
+        if vector_store_manager.load_vector_store():
+            logger.info("[OK] 벡터 스토어 로드 성공")
+        else:
+            logger.warning("[주의] 벡터 스토어가 없습니다")
+            logger.warning("RAG 기능 사용 불가. 벡터 스토어를 먼저 구축하세요:")
+            logger.warning("  실행: python scripts/build_vector_store.py")
+    except Exception as e:
+        logger.error(f"[ERROR] 벡터 스토어 로드 오류: {str(e)}")
+        logger.warning("RAG 기능 없이 계속 실행됩니다")
     
     logger.info(f"서버 주소: http://{settings.HOST}:{settings.PORT}")
     logger.info(f"문서: http://{settings.HOST}:{settings.PORT}/docs")

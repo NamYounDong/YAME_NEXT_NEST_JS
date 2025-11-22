@@ -40,8 +40,6 @@ export interface ChatMessage {
 interface UseChatSocketOptions {
   backendUrl?: string;
   sessionId?: string;
-  userAge?: number;
-  isPregnant?: boolean;
   location?: { latitude: number; longitude: number };
 }
 
@@ -70,8 +68,6 @@ export function useChatSocket(
   const {
     backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001',
     sessionId: providedSessionId,
-    userAge,
-    isPregnant,
     location,
   } = options;
 
@@ -195,18 +191,16 @@ export function useChatSocket(
 
       setMessages((prev) => [...prev, userMessage]);
 
-      // 백엔드로 메시지 전송
+      // 백엔드로 메시지 전송 (나이/임신 정보는 제외, 필요하면 챗봇이 물어봄)
       socketRef.current.emit('send_message', {
         sessionId: sessionIdRef.current,
         message,
-        userAge,
-        isPregnant,
         location,
       });
 
       console.log('[Socket] 메시지 전송:', message);
     },
-    [isConnected, userAge, isPregnant, location]
+    [isConnected, location]
   );
 
   /**
@@ -219,15 +213,7 @@ export function useChatSocket(
         return;
       }
 
-      // 선택 메시지를 UI에 추가 (선택사항)
-      const selectionMessage: ChatMessage = {
-        id: uuidv4(),
-        role: 'user',
-        content: `질환 선택: ${diseaseId}`,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages((prev) => [...prev, selectionMessage]);
+      // 사용자 메시지는 UI에 추가하지 않음 (챗봇 응답만 표시)
 
       // 백엔드로 선택 정보 전송
       socketRef.current.emit('select_disease', {
@@ -254,6 +240,16 @@ export function useChatSocket(
     });
 
     console.log('[Socket] 세션 종료 요청');
+
+    // 소켓 연결 종료
+    setTimeout(() => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setIsConnected(false);
+        console.log('[Socket] 연결 종료됨');
+      }
+    }, 500);
   }, []);
 
   /**
@@ -273,4 +269,3 @@ export function useChatSocket(
     clearMessages,
   };
 }
-

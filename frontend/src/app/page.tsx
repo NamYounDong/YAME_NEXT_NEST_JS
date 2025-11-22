@@ -70,7 +70,7 @@ export default function Home() {
             {/* Main Action Button */}
             <div className="w-full max-w-sm space-y-4">
               <Link
-                href="/symptom-analysis"
+                href="/symptom-chat"
                 className="block w-full py-4 px-8 bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold rounded-2xl hover:from-purple-700 hover:to-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg shadow-purple-500/25"
               >
                 <div className="flex items-center justify-center space-x-3">

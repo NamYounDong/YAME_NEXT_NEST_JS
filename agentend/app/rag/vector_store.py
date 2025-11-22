@@ -75,12 +75,12 @@ class VectorStoreManager:
             
             # 문서 개수 확인
             count = self.vector_store._collection.count()
-            logger.info(f"✓ 벡터 스토어 로드 성공: {count}개 문서")
+            logger.info(f"[OK] 벡터 스토어 로드 성공: {count}개 문서")
             
             return True
             
         except Exception as e:
-            logger.error(f"✗ 벡터 스토어 로드 실패: {str(e)}")
+            logger.error(f"[ERROR] 벡터 스토어 로드 실패: {str(e)}")
             return False
     
     def create_drug_document(self, drug_info: Dict[str, Any]) -> Document:
@@ -100,19 +100,20 @@ class VectorStoreManager:
         # 검색용 텍스트 생성
         # 약품명, 성분, 분류 정보를 모두 포함하여 다양한 검색어에 매칭되도록 함
         page_content = f"""
-약품명: {drug_info.get('ITEM_NAME', '')}
-제조사: {drug_info.get('ENTP_NAME', '')}
-성분: {drug_info.get('MATERIAL_NAME', '')}
-분류: {drug_info.get('CLASS_NO', '')}
-효능: {drug_info.get('EE_DOC_ID', '정보 없음')}
+약품명: {drug_info.get('ITEM_NAME') or ''}
+제조사: {drug_info.get('ENTP_NAME') or ''}
+성분: {drug_info.get('MATERIAL_NAME') or ''}
+분류: {drug_info.get('CLASS_NO') or ''}
+효능: {drug_info.get('EE_DOC_ID') or '정보 없음'}
         """.strip()
         
         # 메타데이터 (필터링 및 후처리용)
+        # None 값을 빈 문자열로 변환하여 Chroma DB 호환성 확보
         metadata = {
-            "item_seq": drug_info.get('ITEM_SEQ', ''),
-            "item_name": drug_info.get('ITEM_NAME', ''),
-            "entp_name": drug_info.get('ENTP_NAME', ''),
-            "class_no": drug_info.get('CLASS_NO', ''),
+            "item_seq": drug_info.get('ITEM_SEQ') or '',
+            "item_name": drug_info.get('ITEM_NAME') or '',
+            "entp_name": drug_info.get('ENTP_NAME') or '',
+            "class_no": drug_info.get('CLASS_NO') or '',
             # OTC 여부를 메타데이터에 저장하여 필터링 가능
             "is_otc": True  # 여기서는 OTC만 저장한다고 가정
         }
@@ -154,11 +155,11 @@ class VectorStoreManager:
                 collection_name="dur_drugs"
             )
             
-            logger.info(f"✓ 벡터 스토어 구축 완료: {len(documents)}개 문서 저장")
+            logger.info(f"[OK] 벡터 스토어 구축 완료: {len(documents)}개 문서 저장")
             return True
             
         except Exception as e:
-            logger.error(f"✗ 벡터 스토어 구축 실패: {str(e)}")
+            logger.error(f"[ERROR] 벡터 스토어 구축 실패: {str(e)}")
             return False
     
     def search(

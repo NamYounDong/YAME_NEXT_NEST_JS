@@ -168,9 +168,8 @@ EGEN_API_URL=https://apis.data.go.kr/B552657
 # 데이터베이스 설정
 DB_HOST=localhost
 DB_PORT=3306
-DB_USERNAME=root
 DB_PASSWORD=password
-DB_DATABASE=yame
+DB_NAME=yame
 
 # Redis 설정
 REDIS_HOST=localhost

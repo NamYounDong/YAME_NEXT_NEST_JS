@@ -3,10 +3,10 @@ fastapi
 uvicorn[standard]
 
 # --- LangChain / GPT 모델 ---
-langchain
-langchain-core
-langchain-community
-langchain-openai     # GPT 모델 사용 시 필수
+langchain==0.1.16
+langchain-core==0.1.46
+langchain-community==0.0.34
+langchain-openai==0.0.5   # GPT 모델 사용 시 필수
 
 # --- 환경 변수 ---
 python-dotenv
