@@ -12,6 +12,9 @@ Pydantic의 BaseSettings를 사용하여 타입 안전성과 검증을 보장합
 
 from pydantic_settings import BaseSettings
 from typing import Optional
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
 class Settings(BaseSettings):
     """
@@ -23,7 +26,7 @@ class Settings(BaseSettings):
     
     # --- FastAPI 서버 설정 ---
     HOST: str = "127.0.0.1"  # localhost만 허용 (보안)
-    PORT: int = 8000
+    PORT: int = os.getenv("PORT")
     
     # --- OpenAI API ---
     OPENAI_API_KEY: str  # 필수 항목 (기본값 없음)
