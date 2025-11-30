@@ -22,8 +22,7 @@ services:
       REDIS_PASSWORD: "${REDIS_PASSWORD}"
       TZ: "${TZ}"
     depends_on:
-      - nyd-mariadb
-      - nyd-redis
+      - yame-agentend
     networks:
       - nyd-net
 
@@ -51,8 +50,6 @@ services:
       NODE_ENV: development
     depends_on:
       - yame-agentend
-      - nyd-mariadb
-      - nyd-redis
     networks:
       - nyd-net
 
