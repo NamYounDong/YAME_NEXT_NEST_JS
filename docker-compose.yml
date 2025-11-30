@@ -21,8 +21,6 @@ services:
       REDIS_PORT: 6379
       REDIS_PASSWORD: "${REDIS_PASSWORD}"
       TZ: "${TZ}"
-    depends_on:
-      - yame-agentend
     networks:
       - nyd-net
 
@@ -36,7 +34,7 @@ services:
     container_name: yame-backend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       API_AGENTEND_URL: http://yame-agentend:8000
       DB_HOST: nyd-mariadb
@@ -63,7 +61,7 @@ services:
     container_name: yame-frontend
     restart: unless-stopped
     ports:
-      - "3001:3001"
+      - "3000:3000"
     environment:
       BACKEND_BASE_URL: http://yame-backend:3000
       TZ: "${TZ}"
