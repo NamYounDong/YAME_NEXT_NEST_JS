@@ -75,3 +75,7 @@ services:
       - yame-backend
     networks:
       - nyd-net
+
+networks:
+  nyd-net:
+    external: true
