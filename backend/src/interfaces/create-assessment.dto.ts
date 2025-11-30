@@ -11,4 +11,4 @@ export interface CreateAssessmentDto {
   responses?: any;
   patientId: string;
   doctorId?: string;
-}
+} 
