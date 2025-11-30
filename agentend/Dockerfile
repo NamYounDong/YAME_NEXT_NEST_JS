@@ -10,8 +10,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # requirements.txt 복사 후 의존성 설치
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+COPY requirements_serverside.txt /app/requirements_serverside.txt
+RUN pip install --no-cache-dir -r /app/requirements_serverside.txt
 
 # 애플리케이션 소스 복사
 COPY . /app

@@ -1,7 +1,7 @@
 # ===================================================
-# YAME Agentend - 로컬 개발용 requirements
+# YAME Agentend - 서버 배포용 경량화 requirements
 # ===================================================
-# 로컬 개발: requirements.txt 사용 (개발 도구 포함)
+# 로컬 개발: requirements.txt 사용
 # 서버 배포: requirements_serverside.txt 사용 (경량화)
 # ===================================================
 
@@ -22,9 +22,9 @@ python-dotenv
 SQLAlchemy==2.0.36
 pymysql               # MariaDB 드라이버
 
-# --- 벡터 스토어 ---
-langchain-chroma      # 벡터 스토어 구축/로드
-chromadb              # 벡터 DB
+# --- 벡터 스토어 (서버에서는 로드만 수행) ---
+langchain-chroma      # 벡터 스토어 로드
+chromadb              # 벡터 DB 런타임
 
 # --- Redis (세션 관리) ---
 redis                 # 대화 히스토리 저장
@@ -33,7 +33,10 @@ redis                 # 대화 히스토리 저장
 pydantic-settings     # 설정 관리
 
 # ===================================================
-# 로컬 개발 전용 (서버 배포에서는 제거)
+# 제거된 모듈 (서버 배포에서 불필요)
 # ===================================================
-# sentence-transformers  # 로컬 임베딩 실험용 (선택)
-# websockets            # WebSocket 테스트용 (선택)
+# sentence-transformers  → 미사용 (OpenAI API 사용)
+# websockets            → 미사용 (Backend에서 처리)
+# ===================================================
+# 예상 용량 절감: 약 1.5GB
+# ===================================================
