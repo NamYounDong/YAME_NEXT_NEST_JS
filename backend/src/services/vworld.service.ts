@@ -23,8 +23,8 @@ export class VWorldService {
   private readonly apiUrl: string;
 
   constructor(private configService: ConfigService) {
-    this.apiKey = this.configService.get<string>('VWORLD_API_KEY') || '';
-    this.apiUrl = this.configService.get<string>('VWORLD_API_URL') || 'https://api.vworld.kr';
+    this.apiKey = this.configService.get<string>('NEXT_PUBLIC_VWORLD_API_KEY') || '';
+    this.apiUrl = this.configService.get<string>('NEXT_PUBLIC_VWORLD_API_URL') || 'https://api.vworld.kr';
   }
 
   /**
