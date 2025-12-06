@@ -24,9 +24,9 @@ pipeline {
                     ls -al
 
                     # 각 서비스 디렉터리에 .env 복사
-                    cp "$AGENT_ENV"    agentend/.env
-                    cp "$BACKEND_ENV"  backend/.env
-                    cp "$FRONTEND_ENV" frontend/.env
+                    sudo cp "$AGENT_ENV"    agentend/.env
+                    sudo cp "$BACKEND_ENV"  backend/.env
+                    sudo cp "$FRONTEND_ENV" frontend/.env
 
                     # 확인용
                     ls -al agentend
