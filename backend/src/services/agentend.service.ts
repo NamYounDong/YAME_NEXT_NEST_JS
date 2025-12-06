@@ -61,9 +61,7 @@ export class AgentendService {
 
   constructor(private readonly configService: ConfigService) {
     // FastAPI 서버 URL (환경 변수 또는 기본값)
-    this.agentendUrl =
-      this.configService.get<string>('AGENTEND_URL') ||
-      'http://127.0.0.1:8000';
+    this.agentendUrl = this.configService.get<string>('AGENTEND_URL') || 'http://127.0.0.1:8000';
 
     // Axios 인스턴스 생성
     // 설정:
