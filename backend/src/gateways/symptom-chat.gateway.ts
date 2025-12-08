@@ -33,9 +33,24 @@ import { AgentendService } from '../services/agentend.service';
  * cors: 프론트엔드(localhost:3000)에서 접근 허용
  * namespace: '/chat' 네임스페이스 사용
  */
+
+// origin 배열을 동적으로 생성 (환경 변수 BACKEND_URL 포함)
+const getCorsOrigins = (): string[] => {
+  const origins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const backendUrl = process.env.BACKEND_URL;
+  const frontendUrl = process.env.FRONTEND_URL;
+  if (backendUrl) {
+    origins.push(backendUrl);
+  }
+  if (frontendUrl) {
+    origins.push(frontendUrl);
+  }
+  return origins;
+};
+
 @WebSocketGateway({
   cors: {
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: getCorsOrigins(),
     credentials: true,
   },
   namespace: '/chat',
