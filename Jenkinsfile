@@ -20,8 +20,11 @@ pipeline {
                     file(credentialsId: 'YAME_FRONTEND_ENV',  variable: 'FRONTEND_ENV')
                 ]) {
                     sh '''
-                    # Jenkins 워크스페이스 기준
-                    ls -al
+                    # 기존 .env 있으면 삭제 (파일 퍼미션과 상관없이 디렉터리 쓰기 권한으로 삭제 가능)
+                    rm -f agentend/.env
+                    rm -f backend/.env
+                    rm -f frontend/.env
+
 
                     # 각 서비스 디렉터리에 .env 복사
                     cp "$AGENT_ENV"    agentend/.env
