@@ -15,6 +15,9 @@ pipeline {
         stage('Prepare .env files') {
             steps {
                 withCredentials([
+                    string(credentialsId: 'MARIADB_ROOT_PASSWORD', variable: 'MARIADB_ROOT_PASSWORD'),
+                    string(credentialsId: 'REDIS_PASSWORD',   variable: 'REDIS_PASSWORD'),
+                    string(credentialsId: 'TZ',         variable: 'TZ'),
                     file(credentialsId: 'YAME_AGENTEND_ENV',  variable: 'AGENT_ENV'),
                     file(credentialsId: 'YAME_BACKEND_ENV',   variable: 'BACKEND_ENV'),
                     file(credentialsId: 'YAME_FRONTEND_ENV',  variable: 'FRONTEND_ENV')
