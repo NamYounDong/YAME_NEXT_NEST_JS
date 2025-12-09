@@ -103,7 +103,6 @@ Thumbs.db
 *.h5
 *.hdf5
 ml_models/
-models/
 
 # 백업 파일
 *.bak
