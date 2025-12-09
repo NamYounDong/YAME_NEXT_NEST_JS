@@ -24,6 +24,7 @@ import {
   MessageBody,
 } from '@nestjs/websockets';
 import { Logger, UseGuards } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Server, Socket } from 'socket.io';
 import { AgentendService } from '../services/agentend.service';
 
@@ -32,19 +33,34 @@ import { AgentendService } from '../services/agentend.service';
  * 
  * cors: 프론트엔드(localhost:3000)에서 접근 허용
  * namespace: '/chat' 네임스페이스 사용
+ * 
+ * 주의: ConfigModule.forRoot()가 .env 파일을 로드하므로,
+ * process.env를 사용할 수 있습니다. 하지만 ConfigService를
+ * 사용하는 것이 더 권장됩니다. 다만 데코레이터 레벨에서는
+ * ConfigService를 주입받을 수 없으므로, 정적 함수를 사용합니다.
  */
 
-// origin 배열을 동적으로 생성 (환경 변수 BACKEND_URL 포함)
+/**
+ * CORS origins 배열을 동적으로 생성
+ * ConfigModule이 .env 파일을 로드한 후 process.env에서 값을 가져옵니다.
+ */
 const getCorsOrigins = (): string[] => {
   const origins = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  
+  // ConfigModule.forRoot()가 .env 파일을 로드하므로 process.env 사용 가능
+  // 환경 변수가 없으면 undefined가 되므로 안전하게 처리
   const backendUrl = process.env.BACKEND_URL;
   const frontendUrl = process.env.FRONTEND_URL;
+
   if (backendUrl) {
     origins.push(backendUrl);
   }
   if (frontendUrl) {
     origins.push(frontendUrl);
   }
+
+  console.log('origins', origins);
+
   return origins;
 };
 
@@ -66,7 +82,20 @@ export class SymptomChatGateway
   // 연결된 클라이언트 추적 (세션 ID -> Socket ID 매핑)
   private readonly connectedClients = new Map<string, string>();
 
-  constructor(private readonly agentendService: AgentendService) {}
+  constructor(
+    private readonly agentendService: AgentendService,
+    private readonly configService: ConfigService,
+  ) {
+    // 생성자에서 환경 변수 확인 및 로깅
+    const origins = getCorsOrigins();
+    this.logger.log(`CORS origins 설정: ${origins.join(', ')}`);
+    
+    // ConfigService를 통해서도 확인 (디버깅용)
+    const backendUrl = this.configService.get<string>('BACKEND_URL');
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+    this.logger.debug(`BACKEND_URL: ${backendUrl || 'undefined'}`);
+    this.logger.debug(`FRONTEND_URL: ${frontendUrl || 'undefined'}`);
+  }
 
   /**
    * 클라이언트 연결 시 호출
